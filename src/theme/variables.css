@@ -1,0 +1,59 @@
+/*
+ * Tema de Ionic con la paleta de FridgeYA (ver tokens de Tailwind en assets/main.css).
+ * Solo modo claro: la app vive en una tablet fija en la oficina.
+ */
+:root {
+  --ion-font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --ion-background-color: #f6f8fa; /* ink-50 */
+  --ion-background-color-rgb: 246, 248, 250;
+  --ion-text-color: #283140; /* ink-800 */
+  --ion-text-color-rgb: 40, 49, 64;
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-border-color: #d9dee5;
+  --ion-item-background: #ffffff;
+  --ion-border-color: #d9dee5;
+
+  --ion-color-primary: #0f766e; /* brand-700 */
+  --ion-color-primary-rgb: 15, 118, 110;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0d6861;
+  --ion-color-primary-tint: #27847c;
+
+  --ion-color-success: #05967b; /* brand-600 */
+  --ion-color-success-rgb: 5, 150, 123;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #05846c;
+  --ion-color-success-tint: #1ea188;
+
+  --ion-color-warning: #d97706;
+  --ion-color-warning-rgb: 217, 119, 6;
+  --ion-color-warning-contrast: #ffffff;
+  --ion-color-warning-contrast-rgb: 255, 255, 255;
+  --ion-color-warning-shade: #bf6905;
+  --ion-color-warning-tint: #dd851f;
+
+  --ion-color-danger: #dc2626;
+  --ion-color-danger-rgb: 220, 38, 38;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #c22121;
+  --ion-color-danger-tint: #e03c3c;
+
+  --ion-color-medium: #677487; /* ink-500 */
+  --ion-color-medium-rgb: 103, 116, 135;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #5b6677;
+  --ion-color-medium-tint: #768293;
+
+  --ion-color-light: #eceff3; /* ink-100 */
+  --ion-color-light-rgb: 236, 239, 243;
+  --ion-color-light-contrast: #283140;
+  --ion-color-light-contrast-rgb: 40, 49, 64;
+  --ion-color-light-shade: #d0d2d6;
+  --ion-color-light-tint: #eef1f4;
+}
