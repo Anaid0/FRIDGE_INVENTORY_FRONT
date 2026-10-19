@@ -62,6 +62,8 @@ export interface CreateProductInput {
   unit?: string;
   minStock?: number;
   categoryId?: string | null;
+  /** Precio de referencia (decimal) para productos sin compras. */
+  referencePrice?: string | null;
   initialQuantity?: number;
 }
 
@@ -71,6 +73,7 @@ export interface UpdateProductInput {
   unit?: string;
   minStock?: number;
   categoryId?: string | null;
+  referencePrice?: string | null;
   isActive?: boolean;
 }
 
@@ -104,11 +107,13 @@ export interface ContributionInput {
   note?: string | null;
 }
 
-export interface PurchaseItemInput {
-  productId: string;
-  quantity: number;
-  unitPrice: string;
-}
+/**
+ * Línea de compra: por unidad (`quantity` + `unitPrice`) o por paquetes (`packageCount` +
+ * `unitsPerPackage` + `total` pagado). Con paquetes, el precio unitario lo calcula la API: total ÷ unidades.
+ */
+export type PurchaseItemInput =
+  | { productId: string; quantity: number; unitPrice: string }
+  | { productId: string; packageCount: number; unitsPerPackage: number; total: string };
 
 export interface RegisterPurchaseInput {
   periodId: string;

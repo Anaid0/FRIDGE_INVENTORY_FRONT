@@ -52,7 +52,7 @@ useOnEnter(() => {
     <section>
       <PageHeader title="Compras" subtitle="Historial de lo que se compró con el fondo de cada quincena.">
         <template #actions>
-          <RouterLink v-if="auth.isAdmin" to="/admin/compras/nueva" class="btn-primary">
+          <RouterLink v-if="auth.isAdmin" to="/admin/compras/nueva" class="btn-primary min-h-11 px-[18px]">
             <Icon name="plus" :size="16" /> Registrar compra
           </RouterLink>
         </template>
@@ -80,28 +80,28 @@ useOnEnter(() => {
       <div v-else class="card overflow-hidden transition-opacity" :class="{ 'opacity-60': loading && data }">
         <EmptyState v-if="data && !data.items.length" icon="cart" title="No hay compras" />
         <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="border-b border-ink-100 bg-ink-50 text-xs text-ink-500">
+          <table class="w-full text-[15px]">
+            <thead class="border-b border-ink-200/70 glass-inset text-[13px] text-ink-500">
               <tr>
-                <th scope="col" class="px-4 py-3 text-left font-medium">Fecha</th>
-                <th scope="col" class="px-4 py-3 text-left font-medium">Tienda</th>
-                <th scope="col" class="px-4 py-3 text-left font-medium">Compró</th>
-                <th scope="col" class="px-4 py-3 text-left font-medium">Quincena</th>
-                <th scope="col" class="px-4 py-3 text-right font-medium">Productos</th>
-                <th scope="col" class="px-4 py-3 text-right font-medium">Total</th>
+                <th scope="col" class="px-4 py-3 text-left font-extrabold">Fecha</th>
+                <th scope="col" class="px-4 py-3 text-left font-extrabold">Tienda</th>
+                <th scope="col" class="px-4 py-3 text-left font-extrabold">Compró</th>
+                <th scope="col" class="px-4 py-3 text-left font-extrabold">Quincena</th>
+                <th scope="col" class="px-4 py-3 text-right font-extrabold">Productos</th>
+                <th scope="col" class="px-4 py-3 text-right font-extrabold">Total</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-ink-100">
+            <tbody class="divide-y divide-ink-200/60">
               <tr
                 v-for="p in data?.items ?? []"
                 :key="p.id"
-                class="hover:bg-ink-50"
+                class="hover:bg-white/55"
                 :class="{ 'text-ink-400': p.voidedAt }"
               >
                 <td class="px-4 py-3 whitespace-nowrap">
                   <RouterLink
                     :to="`/admin/compras/${p.id}`"
-                    class="font-medium text-ink-900 hover:text-brand-700"
+                    class="font-extrabold text-ink-900 hover:text-brand-700"
                   >
                     {{ formatDateTime(p.purchasedAt) }}
                   </RouterLink>
@@ -117,7 +117,7 @@ useOnEnter(() => {
                 <td class="px-4 py-3 text-ink-600">{{ p.periodName }}</td>
                 <td class="px-4 py-3 text-right tabular-nums">{{ p.itemsCount }}</td>
                 <td
-                  class="px-4 py-3 text-right font-semibold tabular-nums"
+                  class="px-4 py-3 text-right font-extrabold tabular-nums"
                   :class="{ 'line-through': p.voidedAt }"
                 >
                   {{ formatMoney(p.total) }}
@@ -128,7 +128,7 @@ useOnEnter(() => {
         </div>
         <Pagination
           v-if="data && data.total > data.pageSize"
-          class="border-t border-ink-100"
+          class="border-t border-ink-200/70"
           :page="data.page"
           :page-size="data.pageSize"
           :total="data.total"

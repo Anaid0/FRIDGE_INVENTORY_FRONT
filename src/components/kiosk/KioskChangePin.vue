@@ -4,6 +4,8 @@ import type { KioskPerson } from '@/domain/models';
 import { ApiError, errorMessage } from '@/services/errors';
 import { useKioskStore } from '@/stores/kiosk';
 import { isTrivialPin } from '@/utils/format';
+import Avatar from '../ui/Avatar.vue';
+import Icon from '../ui/Icon.vue';
 import PinPad from './PinPad.vue';
 
 /** Cambiar el propio PIN en la tablet: actual → nuevo → confirmación. */
@@ -12,6 +14,7 @@ const emit = defineEmits<{ done: []; cancel: [] }>();
 
 const kiosk = useKioskStore();
 type Step = 'current' | 'new' | 'confirm';
+const STEPS: Step[] = ['current', 'new', 'confirm'];
 const step = ref<Step>('current');
 const current = ref('');
 const next = ref('');
@@ -22,6 +25,11 @@ const LABELS: Record<Step, string> = {
   current: 'Escribe tu PIN actual',
   new: 'Escribe tu PIN nuevo',
   confirm: 'Repite el PIN nuevo',
+};
+const DESCRIPTIONS: Record<Step, string> = {
+  current: 'Tu PIN actual',
+  new: 'Un PIN nuevo de 4 dígitos',
+  confirm: 'El PIN nuevo otra vez',
 };
 
 async function onComplete(pin: string) {
@@ -64,14 +72,59 @@ async function onComplete(pin: string) {
 </script>
 
 <template>
-  <div>
-    <PinPad :key="step" :label="LABELS[step]" :error="error" :disabled="saving" @complete="onComplete" />
-    <button
-      type="button"
-      class="mx-auto mt-6 block py-2 text-sm font-medium text-ink-500"
-      @click="emit('cancel')"
+  <div class="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-12">
+    <section class="flex min-w-0 flex-col">
+      <div>
+        <button type="button" class="btn-secondary min-h-[52px] px-5 text-base" @click="emit('cancel')">
+          <Icon name="arrowLeft" :size="20" :stroke="2.25" /> Cancelar
+        </button>
+      </div>
+      <Avatar :person="person" size="xl" class="hello-avatar mt-8 lg:mt-12" />
+      <h1 class="mt-5 text-4xl font-black tracking-tight text-ink-900 sm:text-5xl">Cambiar mi PIN</h1>
+      <p class="mt-4 text-lg text-ink-500">{{ person.name }}, escribe en el teclado:</p>
+      <ol class="mt-4 list-none space-y-2.5 p-0" aria-label="Pasos para cambiar el PIN">
+        <li
+          v-for="(s, index) in STEPS"
+          :key="s"
+          class="flex items-center gap-3.5 rounded-2xl px-4 py-3"
+          :class="s === step ? 'glass border-brand-600!' : 'glass-inset'"
+          :aria-current="s === step ? 'step' : undefined"
+        >
+          <span
+            class="grid size-10 shrink-0 place-items-center rounded-[10px] text-lg font-black"
+            :class="
+              STEPS.indexOf(step) > index
+                ? 'bg-success-700 text-white'
+                : s === step
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-white/70 text-ink-500'
+            "
+          >
+            <Icon v-if="STEPS.indexOf(step) > index" name="check" :size="20" :stroke="2.5" />
+            <template v-else>{{ index + 1 }}</template>
+          </span>
+          <span class="text-lg font-extrabold" :class="s === step ? 'text-ink-900' : 'text-ink-500'">
+            {{ DESCRIPTIONS[s] }}
+          </span>
+        </li>
+      </ol>
+      <p class="mt-6 text-sm text-ink-500 lg:mt-auto lg:pt-8">
+        Elige uno difícil de adivinar: nada de 1234 ni 1111.
+      </p>
+    </section>
+
+    <section
+      class="glass-strong w-full max-w-[30rem] justify-self-center rounded-[28px] px-5 py-7 lg:max-w-none lg:px-10"
     >
-      Cancelar
-    </button>
+      <PinPad :key="step" :label="LABELS[step]" :error="error" :disabled="saving" @complete="onComplete" />
+    </section>
   </div>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .hello-avatar {
+    display: none;
+  }
+}
+</style>

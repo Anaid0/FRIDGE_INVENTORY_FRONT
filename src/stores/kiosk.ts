@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref, shallowRef } from 'vue';
 import type { KioskMovementInput } from '@/domain/inputs';
 import type {
+  Category,
   KioskDevice,
   KioskMovementResult,
   KioskPerson,
@@ -34,6 +35,7 @@ export const useKioskStore = defineStore('kiosk', () => {
   const status = ref<KioskStatus>('loading');
   const device = ref<KioskDevice | null>(null);
   const products = shallowRef<Product[]>([]);
+  const categories = shallowRef<Category[]>([]);
   const people = shallowRef<KioskPerson[]>([]);
   const topWithdrawer = ref<TopWithdrawer | null>(null);
   const latestMovements = shallowRef<MovementView[]>([]);
@@ -76,15 +78,20 @@ export const useKioskStore = defineStore('kiosk', () => {
     }
   }
 
-  /** Stock, personas, quién más retira y últimos movimientos (así "¿Quién eres?" aparece al instante). */
+  /**
+   * Stock, personas, quién más retira y últimos movimientos (así "¿Quién eres?" aparece al instante).
+   * Las categorías solo sirven para filtrar: si fallan, se conservan las que había.
+   */
   async function refresh(): Promise<void> {
-    const [productList, peopleList, top, latest] = await Promise.all([
+    const [productList, peopleList, top, latest, categoryList] = await Promise.all([
       kiosk.products(),
       kiosk.people(),
       kiosk.topWithdrawers('all', 1),
       kiosk.latestMovements(15),
+      kiosk.categories().catch(() => categories.value),
     ]);
     products.value = productList;
+    categories.value = categoryList;
     people.value = peopleList;
     topWithdrawer.value = top[0] ?? null;
     latestMovements.value = latest;
@@ -128,6 +135,7 @@ export const useKioskStore = defineStore('kiosk', () => {
     device,
     products,
     activeProducts,
+    categories,
     people,
     topWithdrawer,
     latestMovements,

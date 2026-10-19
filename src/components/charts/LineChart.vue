@@ -225,7 +225,7 @@ const tooltipLeft = computed(() => {
 
     <div
       v-if="active"
-      class="pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-xs shadow-md"
+      class="pointer-events-none absolute top-1 z-10 -translate-x-1/2 glass-strong rounded-lg px-3 py-2 text-xs"
       :style="{ left: tooltipLeft }"
       role="tooltip"
     >

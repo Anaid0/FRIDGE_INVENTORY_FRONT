@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FridgeYA · Meter</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0b79c3}a:hover{color:#073b5e}
+</style>
+</helmet>
+<div style="width: 520px; height: 600px; box-sizing: border-box; background: #e6f3fb; display: flex; flex-direction: column; font-family: 'Nunito', sans-serif; color: #073b5e">
+<svg width="520" height="440" viewBox="0 0 520 440" role="img" aria-label="El mono de FridgeYA guarda su coca de almuerzo en la nevera">
+<ellipse cx="270" cy="400" rx="230" ry="14" fill="#cfe8f7"></ellipse>
+<rect x="60" y="40" width="210" height="350" rx="24" fill="#cfe8f7" stroke="#0b79c3" stroke-width="8"></rect>
+<line x1="60" y1="150" x2="270" y2="150" stroke="#0b79c3" stroke-width="8"></line>
+<rect x="90" y="88" width="30" height="30" rx="6" fill="#ffffff" stroke="#7fbde6" stroke-width="4"></rect>
+<rect x="128" y="96" width="24" height="24" rx="5" fill="#ffffff" stroke="#7fbde6" stroke-width="4"></rect>
+<line x1="72" y1="240" x2="258" y2="240" stroke="#7fbde6" stroke-width="6" stroke-linecap="round"></line>
+<line x1="72" y1="330" x2="258" y2="330" stroke="#7fbde6" stroke-width="6" stroke-linecap="round"></line>
+<rect x="92" y="180" width="26" height="58" rx="8" fill="#ff8a1f"></rect>
+<rect x="98" y="170" width="14" height="14" rx="3" fill="#073b5e"></rect>
+<rect x="142" y="206" width="66" height="30" rx="8" fill="none" stroke="#7fbde6" stroke-width="4" stroke-dasharray="8 7"></rect>
+<rect x="98" y="270" width="40" height="58" rx="4" fill="#ffffff" stroke="#0b79c3" stroke-width="4"></rect>
+<path d="M98 284 L118 270 L138 284" fill="none" stroke="#0b79c3" stroke-width="4" stroke-linejoin="round"></path>
+<circle cx="190" cy="308" r="20" fill="#e84a5f"></circle>
+<path d="M190 290 Q196 280 204 282" stroke="#2f8a4f" stroke-width="4" fill="none" stroke-linecap="round"></path>
+<path d="M270 40 L340 70 L340 370 L270 390 Z" fill="#ffffff" stroke="#0b79c3" stroke-width="8" stroke-linejoin="round"></path>
+<line x1="326" y1="160" x2="326" y2="230" stroke="#073b5e" stroke-width="8" stroke-linecap="round"></line>
+<g transform="translate(330,150) scale(0.8)">
+<ellipse cx="100" cy="232" rx="62" ry="60" fill="#0b79c3"></ellipse>
+<ellipse cx="100" cy="244" rx="38" ry="40" fill="#ffffff"></ellipse>
+<circle cx="28" cy="100" r="24" fill="#0b79c3"></circle><circle cx="172" cy="100" r="24" fill="#0b79c3"></circle><circle cx="28" cy="100" r="11" fill="#ffffff"></circle><circle cx="172" cy="100" r="11" fill="#ffffff"></circle>
+<circle cx="100" cy="100" r="74" fill="#0b79c3"></circle>
+<circle cx="78" cy="90" r="28" fill="#ffffff"></circle><circle cx="122" cy="90" r="28" fill="#ffffff"></circle><ellipse cx="100" cy="128" rx="40" ry="32" fill="#ffffff"></ellipse>
+<circle cx="74" cy="92" r="9" fill="#073b5e"></circle><circle cx="114" cy="92" r="9" fill="#073b5e"></circle><circle cx="76" cy="89" r="3" fill="#ffffff"></circle><circle cx="116" cy="89" r="3" fill="#ffffff"></circle>
+<circle cx="94" cy="114" r="3" fill="#0b79c3"></circle><circle cx="106" cy="114" r="3" fill="#0b79c3"></circle>
+<path d="M84 128 Q100 150 116 128 Z" fill="#073b5e" stroke="#073b5e" stroke-width="4" stroke-linejoin="round"></path>
+</g>
+<path d="M372 336 Q310 330 262 290" stroke="#0b79c3" stroke-width="20" fill="none" stroke-linecap="round"></path>
+<rect x="198" y="262" width="74" height="34" rx="8" fill="#ffffff" stroke="#0b79c3" stroke-width="4"></rect>
+<rect x="192" y="252" width="86" height="14" rx="6" fill="#0b79c3"></rect>
+<circle cx="262" cy="292" r="15" fill="#0b79c3"></circle>
+<path d="M484 78 L392 78" stroke="#1f9d63" stroke-width="14" stroke-linecap="round"></path>
+<path d="M402 54 L362 78 L402 102 Z" fill="#1f9d63" stroke="#1f9d63" stroke-width="6" stroke-linejoin="round"></path>
+<circle cx="64" cy="44" r="32" fill="#073b5e" stroke="#e6f3fb" stroke-width="6"></circle>
+<text x="64" y="55" text-anchor="middle" font-family="Nunito, sans-serif" font-size="30" font-weight="900" fill="#ffffff">+1</text>
+</svg>
+<div style="padding: 8px 40px 32px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 44px; font-weight: 900; line-height: 1.1">Meter</div>
+<div style="font-size: 20px; font-weight: 700; color: #33607f">Registra lo que guardas en la nevera</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":520,"height":600}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

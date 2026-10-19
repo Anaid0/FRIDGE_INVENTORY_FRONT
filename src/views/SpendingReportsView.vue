@@ -172,7 +172,7 @@ const priceProductName = computed(
 
         <div v-else class="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div class="card p-5">
-            <h2 class="font-semibold text-ink-900">Gasto por producto</h2>
+            <h2 class="text-[19px] font-black text-ink-900">Gasto por producto</h2>
             <p class="mb-4 text-xs text-ink-500">
               De mayor a menor{{
                 (spending.data.value?.byProduct.length ?? 0) > TOP_PRODUCTS ? ` · top ${TOP_PRODUCTS}` : ''
@@ -186,7 +186,7 @@ const priceProductName = computed(
             />
           </div>
           <div class="card p-5">
-            <h2 class="font-semibold text-ink-900">Gasto por categoría</h2>
+            <h2 class="text-[19px] font-black text-ink-900">Gasto por categoría</h2>
             <p class="mb-4 text-xs text-ink-500">De mayor a menor</p>
             <BarChart
               :rows="categoryRows"
@@ -200,7 +200,7 @@ const priceProductName = computed(
         <div class="card p-5">
           <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 class="font-semibold text-ink-900">Evolución del precio</h2>
+              <h2 class="text-[19px] font-black text-ink-900">Evolución del precio</h2>
               <p class="text-xs text-ink-500">
                 Precio unitario pagado por {{ priceProductName }} en cada compra, en orden de fecha (todo el
                 historial)

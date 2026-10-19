@@ -40,7 +40,14 @@ import type {
   ProductSpending,
   PurchaseDetail,
   PurchaseListItem,
+  ConsumptionCharge,
+  PeopleActivity,
+  PeriodCharges,
+  PeriodRanking,
+  PeriodRankingStatus,
   RankingPeriod,
+  RankingPeriodOption,
+  RankingScope,
   StockMovementResult,
   TopWithdrawer,
   User,
@@ -67,6 +74,8 @@ export interface UserService {
 /** Personas de la tablet (nombre + PIN). Solo admin. */
 export interface PeopleService {
   list(filter?: PersonFilter): Promise<Person[]>;
+  /** Cuánto sacó y metió cada persona en la quincena abierta (o la indicada). */
+  activity(periodId?: string): Promise<PeopleActivity>;
   create(input: CreatePersonInput): Promise<Person>;
   update(id: string, input: UpdatePersonInput): Promise<Person>;
   resetPin(id: string, pin: string): Promise<Person>;
@@ -92,7 +101,7 @@ export interface MovementService {
   stockIn(input: StockMovementInput): Promise<StockMovementResult>;
   stockOut(input: StockMovementInput): Promise<StockMovementResult>;
   list(filter?: MovementFilter): Promise<Page<MovementView>>;
-  topWithdrawers(period?: RankingPeriod, limit?: number): Promise<TopWithdrawer[]>;
+  topWithdrawers(scope?: RankingPeriod | RankingScope, limit?: number): Promise<TopWithdrawer[]>;
   dashboard(): Promise<DashboardSummary>;
 }
 
@@ -103,6 +112,18 @@ export interface FundingService {
   open(input: OpenPeriodInput): Promise<FundingPeriod>;
   close(id: string): Promise<FundingPeriod>;
   contribute(periodId: string, input: ContributionInput): Promise<Contribution>;
+  /** Si el más hambriento de la quincena ya se calculó (y el resultado), o desde cuándo se puede. */
+  ranking(periodId: string): Promise<PeriodRankingStatus>;
+  /** Quien más consume, más aporta: cobros por consumo (estimación si la quincena sigue abierta). */
+  charges(periodId: string): Promise<PeriodCharges>;
+  /** Recalcula los cobros de una quincena cerrada (admin). */
+  generateCharges(periodId: string): Promise<PeriodCharges>;
+  /** Cobros de quincenas anteriores con saldo pendiente. */
+  pendingCharges(): Promise<ConsumptionCharge[]>;
+  /** Pago (total si no se indica monto) de un cobro: aporte a la quincena abierta. */
+  payCharge(chargeId: string, input?: { amount?: string; note?: string | null }): Promise<Contribution>;
+  /** "Calcular el más hambriento" (solo admin; la quincena debe haber terminado o estar cerrada). */
+  computeRanking(periodId: string): Promise<PeriodRanking>;
 }
 
 export interface PurchaseService {
@@ -127,7 +148,16 @@ export interface KioskService {
   me(): Promise<KioskDevice>;
   people(): Promise<KioskPerson[]>;
   products(): Promise<Product[]>;
-  topWithdrawers(period?: RankingPeriod, limit?: number): Promise<TopWithdrawer[]>;
+  /** Categorías (para filtrar los productos en la tablet). */
+  categories(): Promise<Category[]>;
+  topWithdrawers(scope?: RankingPeriod | RankingScope, limit?: number): Promise<TopWithdrawer[]>;
+  /** El último más hambriento calculado (null si nunca se ha calculado). */
+  latestHungriest(): Promise<PeriodRanking | null>;
+  /** Quincenas para el ranking, la más reciente primero. */
+  rankingPeriods(): Promise<RankingPeriodOption[]>;
+  periodRanking(periodId: string): Promise<PeriodRankingStatus>;
+  /** "Calcular el más hambriento" desde la tablet (solo la primera vez; recalcular es del admin). */
+  computeRanking(periodId: string): Promise<PeriodRanking>;
   latestMovements(limit?: number): Promise<MovementView[]>;
   register(input: KioskMovementInput): Promise<KioskMovementResult>;
   changePin(personId: string, currentPin: string, newPin: string): Promise<void>;

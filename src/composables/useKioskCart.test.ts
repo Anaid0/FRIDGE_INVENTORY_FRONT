@@ -12,6 +12,8 @@ const product = (id: string, quantity: number, extra: Partial<Product> = {}): Pr
   minStock: 0,
   isLowStock: false,
   categoryId: null,
+  referencePrice: null,
+  currentPrice: null,
   isActive: true,
   createdAt: '',
   updatedAt: '',

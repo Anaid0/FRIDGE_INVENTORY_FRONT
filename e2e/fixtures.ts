@@ -48,8 +48,8 @@ export function activeView(page: Page) {
 export async function stockOf(page: Page, productName: string): Promise<number> {
   const view = activeView(page);
   // `has` se evalúa dentro de cada fila: el localizador interno debe partir de `page`, no de la vista.
-  const row = view.getByRole('listitem').filter({ has: page.getByText(productName, { exact: true }) });
-  return Number(await row.locator('p.text-2xl').innerText());
+  const row = view.getByRole('row').filter({ has: page.getByText(productName, { exact: true }) });
+  return Number(await row.locator('[data-stock]').innerText());
 }
 
 export function headerBadge(page: Page) {
@@ -127,12 +127,11 @@ export async function typePin(page: Page, pin: string) {
 }
 
 /**
- * Cambia de pestaña tocando el ion-segment-button (es quien recibe el toque; el rol "tab" lo tiene un botón
- * interno que no recibe eventos de puntero) y comprueba que quedó seleccionada. `value` es una propiedad del
- * web component, no un atributo HTML: se busca por el texto.
+ * Cambia de pestaña en la navegación de la tablet (barra lateral, o abajo en el celular) y comprueba que
+ * quedó seleccionada. Pestañas: Sacar, Meter, Ranking, Historial.
  */
 export async function openTab(page: Page, label: string) {
-  await activeView(page).locator('ion-segment-button', { hasText: label }).click();
+  await activeView(page).getByRole('tab', { name: label }).click();
   await expect(activeView(page).getByRole('tab', { name: label })).toHaveAttribute('aria-selected', 'true');
 }
 

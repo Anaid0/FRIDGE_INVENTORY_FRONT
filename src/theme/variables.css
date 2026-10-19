@@ -1,33 +1,32 @@
 /*
  * Tema de Ionic con la paleta de FridgeYA (ver tokens de Tailwind en assets/main.css).
  * Solo modo claro: la app vive en una tablet fija en la oficina.
+ * Valores en theme/glass.css: fondo de color, superficies de vidrio y áreas seguras del dispositivo.
  */
 :root {
   --ion-font-family:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    'Nunito Variable', 'Nunito', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial,
+    sans-serif;
 
-  --ion-background-color: #f6f8fa; /* ink-50 */
-  --ion-background-color-rgb: 246, 248, 250;
-  --ion-text-color: #283140; /* ink-800 */
-  --ion-text-color-rgb: 40, 49, 64;
-  --ion-toolbar-background: #ffffff;
-  --ion-toolbar-border-color: #d9dee5;
-  --ion-item-background: #ffffff;
-  --ion-border-color: #d9dee5;
+  --ion-background-color: #f5f8fb; /* ink-50 */
+  --ion-background-color-rgb: 245, 248, 251;
+  --ion-text-color: #073b5e; /* ink-900 */
+  --ion-text-color-rgb: 7, 59, 94;
+  /* Barras, ítems y bordes translúcidos: ver theme/glass.css. */
 
-  --ion-color-primary: #0f766e; /* brand-700 */
-  --ion-color-primary-rgb: 15, 118, 110;
+  --ion-color-primary: #0b79c3; /* brand-600, azul del logo */
+  --ion-color-primary-rgb: 11, 121, 195;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #0d6861;
-  --ion-color-primary-tint: #27847c;
+  --ion-color-primary-shade: #0a6aac;
+  --ion-color-primary-tint: #2386c9;
 
-  --ion-color-success: #05967b; /* brand-600 */
-  --ion-color-success-rgb: 5, 150, 123;
+  --ion-color-success: #177a4c; /* success-700 */
+  --ion-color-success-rgb: 23, 122, 76;
   --ion-color-success-contrast: #ffffff;
   --ion-color-success-contrast-rgb: 255, 255, 255;
-  --ion-color-success-shade: #05846c;
-  --ion-color-success-tint: #1ea188;
+  --ion-color-success-shade: #146b43;
+  --ion-color-success-tint: #2e875e;
 
   --ion-color-warning: #d97706;
   --ion-color-warning-rgb: 217, 119, 6;
@@ -43,17 +42,17 @@
   --ion-color-danger-shade: #c22121;
   --ion-color-danger-tint: #e03c3c;
 
-  --ion-color-medium: #677487; /* ink-500 */
-  --ion-color-medium-rgb: 103, 116, 135;
+  --ion-color-medium: #546a7f; /* ink-500 */
+  --ion-color-medium-rgb: 84, 106, 127;
   --ion-color-medium-contrast: #ffffff;
   --ion-color-medium-contrast-rgb: 255, 255, 255;
-  --ion-color-medium-shade: #5b6677;
-  --ion-color-medium-tint: #768293;
+  --ion-color-medium-shade: #4a5d70;
+  --ion-color-medium-tint: #65798c;
 
-  --ion-color-light: #eceff3; /* ink-100 */
-  --ion-color-light-rgb: 236, 239, 243;
-  --ion-color-light-contrast: #283140;
-  --ion-color-light-contrast-rgb: 40, 49, 64;
-  --ion-color-light-shade: #d0d2d6;
-  --ion-color-light-tint: #eef1f4;
+  --ion-color-light: #e9eff5; /* ink-100 */
+  --ion-color-light-rgb: 233, 239, 245;
+  --ion-color-light-contrast: #1f364c;
+  --ion-color-light-contrast-rgb: 31, 54, 76;
+  --ion-color-light-shade: #cdd2d8;
+  --ion-color-light-tint: #ebf1f6;
 }

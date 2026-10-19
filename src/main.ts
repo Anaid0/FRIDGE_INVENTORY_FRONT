@@ -2,9 +2,11 @@ import { IonicVue } from '@ionic/vue';
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import App from './App.vue';
+// Letra de la marca (logotipo e ilustraciones), empaquetada: la tablet no necesita internet.
+import '@fontsource-variable/nunito';
 import './assets/main.css';
 import { preferencesStore } from './native/keyValueStore';
-import { isNative, setFullscreen } from './native/platform';
+import { isNative, showSystemBars } from './native/platform';
 import { createAppRouter } from './router';
 import { provideServerConfig, provideServices } from './services/container';
 import { createApiClient } from './services/http/apiClient';
@@ -80,7 +82,7 @@ async function bootstrap() {
   app.use(router);
   await router.isReady();
   app.mount('#app');
-  if (native) void setFullscreen(true);
+  if (native) void showSystemBars();
 }
 
 void bootstrap();

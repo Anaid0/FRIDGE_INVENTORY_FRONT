@@ -19,12 +19,17 @@ export async function keepScreenOn(on: boolean): Promise<void> {
   }
 }
 
-/** Pantalla completa: oculta la barra de estado de Android. */
-export async function setFullscreen(on: boolean): Promise<void> {
+/**
+ * Barras del sistema visibles (estado arriba, navegación abajo) con íconos oscuros sobre el fondo claro
+ * de la app. La app se dibuja de borde a borde y se aparta de ellas con las áreas seguras
+ * (theme/glass.css); Capacitor las informa con las variables --safe-area-inset-*.
+ */
+export async function showSystemBars(): Promise<void> {
   if (!isNative()) return;
   try {
-    const { StatusBar } = await import('@capacitor/status-bar');
-    await (on ? StatusBar.hide() : StatusBar.show());
+    const { SystemBars, SystemBarsStyle } = await import('@capacitor/core');
+    await SystemBars.show();
+    await SystemBars.setStyle({ style: SystemBarsStyle.Light });
   } catch {
     // Igual que arriba: no es imprescindible.
   }

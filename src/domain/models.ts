@@ -62,6 +62,8 @@ export interface PairKioskResult {
 /** Persona tal como la muestra la tablet (nunca datos del PIN). */
 export interface KioskPerson extends UserRef {
   initials: string;
+  /** Bloqueada por PIN incorrectos: hasta cuándo (si no, null). */
+  pinLockedUntil: ISODate | null;
 }
 
 export interface KioskMovementResult {
@@ -92,6 +94,10 @@ export interface Product {
   minStock: number;
   isLowStock: boolean;
   categoryId: string | null;
+  /** Precio que puso el admin para productos sin compras (regalos, stock inicial). */
+  referencePrice: Decimal | null;
+  /** Lo que vale una unidad hoy al sacarla: última compra o, si no hay, el de referencia. */
+  currentPrice: Decimal | null;
   isActive: boolean;
   createdAt: ISODate;
   updatedAt: ISODate;
@@ -113,6 +119,8 @@ export interface Movement {
   registeredBy: string;
   note: string | null;
   purchaseItemId: string | null;
+  /** Salidas manuales: precio unitario guardado al sacar. */
+  unitPrice: Decimal | null;
   createdAt: ISODate;
 }
 
@@ -130,6 +138,8 @@ export interface MovementView {
   performedBy: UserRef;
   registeredBy: UserRef;
   purchaseId: string | null;
+  /** Salidas manuales: precio unitario guardado al sacar. */
+  unitPrice: Decimal | null;
 }
 
 export interface ProductDetail {
@@ -148,7 +158,53 @@ export interface TopWithdrawer {
   withdrawals: number;
 }
 
-export type RankingPeriod = 'all' | 'month' | 'week';
+/** 'period' = la quincena abierta. */
+export type RankingPeriod = 'all' | 'month' | 'week' | 'period';
+
+/** Ranking en vivo: una ventana de tiempo o una quincena concreta (por id). */
+export type RankingScope = { period: RankingPeriod } | { periodId: string };
+
+/** Un puesto del ranking calculado de una quincena (con empates, `position` se repite). */
+export interface PeriodRankingEntry {
+  position: number;
+  user: UserRef;
+  totalWithdrawn: number;
+  withdrawals: number;
+}
+
+/** "El más hambriento de la quincena": resultado guardado al calcularlo. */
+export interface PeriodRanking {
+  period: { id: string; name: string; startDate: string; endDate: string };
+  computedAt: string;
+  /** Un administrador (su nombre) o una tablet (el nombre de la tablet). */
+  computedBy: { kind: 'user' | 'kiosk'; name: string };
+  entries: PeriodRankingEntry[];
+  /** Primer puesto (más de una persona si empatan); vacío si nadie sacó nada. */
+  hungriest: PeriodRankingEntry[];
+  podium: PeriodRankingEntry[];
+}
+
+/** Quincena para elegir en el ranking (también en la tablet, sin montos). */
+export interface RankingPeriodOption {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: PeriodStatus;
+  /** Ya terminó o está cerrada: se puede calcular el más hambriento. */
+  finished: boolean;
+  /** Ya tiene su más hambriento calculado. */
+  computed: boolean;
+}
+
+export interface PeriodRankingStatus {
+  periodId: string;
+  /** La quincena ya terminó o está cerrada: se puede calcular. */
+  canCompute: boolean;
+  /** Desde cuándo se puede calcular (ISO). */
+  availableFrom: string;
+  ranking: PeriodRanking | null;
+}
 
 // --- Quincenas ---
 export type PeriodStatus = 'OPEN' | 'CLOSED';
@@ -185,6 +241,8 @@ export interface Contribution {
   paidAt: ISODate;
   registeredBy: string;
   note: string | null;
+  /** Si es el pago de un cobro por consumo. */
+  chargeId: string | null;
   createdAt: ISODate;
 }
 
@@ -197,6 +255,8 @@ export interface ContributionView {
   note: string | null;
   registeredBy: UserRef;
   createdAt: ISODate;
+  /** Pago de un cobro por consumo: de qué quincena era el cobro. */
+  charge: { id: string; periodId: string; periodName: string } | null;
 }
 
 export interface ContributorTotal {
@@ -223,6 +283,8 @@ export interface PurchaseListItem {
   purchasedAt: ISODate;
   total: Decimal;
   itemsCount: number;
+  /** Resumen de las líneas ("12 Coca cola"). */
+  lines: { productName: string; quantity: number }[];
   hasReceipt: boolean;
   voidedAt: ISODate | null;
   createdAt: ISODate;
@@ -234,6 +296,9 @@ export interface PurchaseItemDetail {
   quantity: number;
   unitPrice: Decimal;
   subtotal: Decimal;
+  /** Si se compró por paquetes (p. ej. 2 sixpacks de 6). */
+  packageCount: number | null;
+  unitsPerPackage: number | null;
 }
 
 export interface PurchaseDetail {
@@ -276,6 +341,42 @@ export interface PricePoint {
 }
 
 // --- Dashboard ---
+/** Unidades que una persona sacó y metió a mano en una quincena. */
+export interface PersonActivity {
+  userId: string;
+  withdrawn: number;
+  stored: number;
+}
+
+export interface PeopleActivity {
+  period: { id: string; name: string; startDate: DateOnly; endDate: DateOnly } | null;
+  people: PersonActivity[];
+}
+
+/** Quien más consume, más aporta: lo que una persona debe aportar por lo que consumió en una quincena. */
+export interface ConsumptionCharge {
+  /** null en una estimación (quincena abierta). */
+  id: string | null;
+  period: { id: string; name: string };
+  user: UserRef;
+  amount: Decimal;
+  paid: Decimal;
+  pending: Decimal;
+  units: number;
+  /** Unidades sin precio conocido (cuentan como $0). */
+  unpricedUnits: number;
+  computedAt: ISODate | null;
+}
+
+export interface PeriodCharges {
+  periodId: string;
+  /** 'generated': guardados al cerrar la quincena. 'estimate': cálculo en vivo (quincena abierta). */
+  status: 'generated' | 'estimate';
+  canGenerate: boolean;
+  charges: ConsumptionCharge[];
+  totals: { amount: Decimal; paid: Decimal; pending: Decimal; unpricedUnits: number };
+}
+
 export interface DashboardSummary {
   activeProducts: number;
   totalUnits: number;

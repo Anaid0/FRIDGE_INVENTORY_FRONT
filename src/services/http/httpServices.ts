@@ -1,5 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import type { MovementView } from '@/domain/models';
+import type { MovementView, PeriodRanking, RankingPeriod, RankingScope } from '@/domain/models';
 import type {
   AuthService,
   CatalogService,
@@ -22,6 +22,10 @@ function clean<T extends object>(params?: T): Partial<T> | undefined {
   ) as Partial<T>;
 }
 
+/** `'week'` → `{ period: 'week' }`; `{ periodId }` se envía tal cual. */
+const rankingScope = (scope: RankingPeriod | RankingScope) =>
+  typeof scope === 'string' ? { period: scope } : scope;
+
 /** Servicios de la tablet sobre su propio cliente HTTP (token de tablet). */
 export function createKioskService(http: AxiosInstance): KioskService {
   const get = async <T>(url: string, params?: object) =>
@@ -30,7 +34,14 @@ export function createKioskService(http: AxiosInstance): KioskService {
     me: () => get('/kiosk/me'),
     people: () => get('/kiosk/people'),
     products: () => get('/products'),
-    topWithdrawers: (period, limit) => get('/stats/top-withdrawers', { period, limit }),
+    categories: () => get('/categories'),
+    topWithdrawers: (scope = 'all', limit) =>
+      get('/stats/top-withdrawers', { ...rankingScope(scope), limit }),
+    latestHungriest: async () =>
+      (await get<{ ranking: PeriodRanking | null }>('/stats/hungriest/latest')).ranking,
+    rankingPeriods: () => get('/stats/ranking-periods'),
+    periodRanking: (periodId) => get(`/funding-periods/${periodId}/ranking`),
+    computeRanking: async (periodId) => (await http.post(`/funding-periods/${periodId}/ranking`)).data,
     latestMovements: async (limit = 20) =>
       (await get<{ items: MovementView[] }>('/movements', { pageSize: limit })).items,
     register: async (input) => (await http.post('/kiosk/movements', input)).data,
@@ -64,6 +75,7 @@ export function createHttpServices(http: AxiosInstance, kioskHttp: AxiosInstance
 
   const people: PeopleService = {
     list: (filter) => get('/people', filter),
+    activity: (periodId) => get('/stats/people-activity', { periodId }),
     create: (input) => post('/people', input),
     update: (id, input) => patch(`/people/${id}`, input),
     resetPin: (id, pin) => post(`/people/${id}/pin`, { pin }),
@@ -88,7 +100,8 @@ export function createHttpServices(http: AxiosInstance, kioskHttp: AxiosInstance
     stockIn: (input) => post('/movements/in', input),
     stockOut: (input) => post('/movements/out', input),
     list: (filter) => get('/movements', filter),
-    topWithdrawers: (period, limit) => get('/stats/top-withdrawers', { period, limit }),
+    topWithdrawers: (scope = 'all', limit) =>
+      get('/stats/top-withdrawers', { ...rankingScope(scope), limit }),
     dashboard: () => get('/dashboard/summary'),
   };
 
@@ -99,6 +112,12 @@ export function createHttpServices(http: AxiosInstance, kioskHttp: AxiosInstance
     open: (input) => post('/funding-periods', input),
     close: (id) => patch(`/funding-periods/${id}/close`),
     contribute: (periodId, input) => post(`/funding-periods/${periodId}/contributions`, input),
+    ranking: (periodId) => get(`/funding-periods/${periodId}/ranking`),
+    charges: (periodId) => get(`/funding-periods/${periodId}/charges`),
+    generateCharges: (periodId) => post(`/funding-periods/${periodId}/charges`),
+    pendingCharges: () => get('/charges/pending'),
+    payCharge: (chargeId, input = {}) => post(`/charges/${chargeId}/payments`, input),
+    computeRanking: (periodId) => post(`/funding-periods/${periodId}/ranking`),
   };
 
   const purchases: PurchaseService = {

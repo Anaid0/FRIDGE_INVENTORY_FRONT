@@ -10,36 +10,59 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 @import '../theme/variables.css';
+@import '../theme/glass.css';
 
 /*
- * Tokens de diseño de FridgeYA. Paleta "fresca" (verde azulado) sobre neutros fríos.
- * Se usan como clases de Tailwind: bg-brand-600, text-ink-700, etc.
+ * Tokens de diseño de FridgeYA, tomados de los mockups (design-assets/): azul del logo (brand), azul
+ * marino para el texto (ink-900 = #073B5E), naranja de acento (accent; "Sacar") y verde (success; "Meter").
+ * Se usan como clases de Tailwind: bg-brand-600, text-ink-700, etc. Toda la app usa Nunito.
  */
 @theme {
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    'Nunito Variable', 'Nunito', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial,
+    sans-serif;
+  --font-display: var(--font-sans);
 
-  --color-brand-50: #ecfdf8;
-  --color-brand-100: #d1faee;
-  --color-brand-200: #a7f3dd;
-  --color-brand-300: #6ee7c8;
-  --color-brand-400: #34d3ad;
-  --color-brand-500: #10b996;
-  --color-brand-600: #05967b;
-  --color-brand-700: #0f766e;
-  --color-brand-800: #115e56;
-  --color-brand-900: #134e48;
+  --color-brand-50: #f1f8fd;
+  --color-brand-100: #e0effa;
+  --color-brand-200: #cfe8f7;
+  --color-brand-300: #7fbde6;
+  --color-brand-400: #3d9bd8;
+  --color-brand-500: #1a88cf;
+  --color-brand-600: #0b79c3;
+  --color-brand-700: #0966a5;
+  --color-brand-800: #085186;
+  --color-brand-900: #073b5e;
 
-  --color-ink-50: #f6f8fa;
-  --color-ink-100: #eceff3;
-  --color-ink-200: #d9dee5;
-  --color-ink-300: #b8c1cc;
-  --color-ink-400: #8a96a6;
-  --color-ink-500: #677487;
-  --color-ink-600: #4f5b6d;
-  --color-ink-700: #3d4757;
-  --color-ink-800: #283140;
-  --color-ink-900: #18202c;
+  --color-ink-50: #f4f8fb;
+  --color-ink-100: #eef3f8;
+  --color-ink-200: #d9e6f0;
+  --color-ink-300: #c9dcea;
+  --color-ink-400: #8aa1b3;
+  --color-ink-500: #4f6b80; /* texto secundario de los mockups; se lee bien sobre vidrio */
+  --color-ink-600: #3d5a70;
+  --color-ink-700: #2c4a60;
+  --color-ink-800: #163f5f;
+  --color-ink-900: #073b5e; /* marino: títulos y texto principal */
+
+  --color-accent-50: #fff7ee;
+  --color-accent-100: #fff0e0;
+  --color-accent-200: #ffcf9e;
+  --color-accent-500: #ff8a1f;
+  --color-accent-600: #e8730a;
+  --color-accent-700: #a34c00;
+
+  --color-success-50: #e8f6ee;
+  --color-success-100: #cdeedb;
+  --color-success-600: #1f9d63;
+  --color-success-700: #157a4b;
+  --color-success-800: #146b42;
+
+  /* Avatares de personas (iniciales sobre un tono suave), como en los mockups. */
+  --color-violet-50: #ece6fb;
+  --color-violet-700: #5b3fb0;
+  --color-rose-50: #fce4ec;
+  --color-rose-700: #a3214a;
 
   --color-danger-50: #fef2f2;
   --color-danger-600: #dc2626;
@@ -48,7 +71,7 @@
   --color-warning-600: #d97706;
   --color-warning-700: #b45309;
 
-  --radius-card: 0.875rem;
+  --radius-card: 1.375rem; /* 22px, como las tarjetas de los mockups */
 }
 
 @layer base {
@@ -106,30 +129,83 @@
 }
 
 /* Componentes reutilizables como utilidades propias (Tailwind 4: se pueden combinar con @apply). */
+
+/* Vidrio (glassmorphism): superficie translúcida que desenfoca el fondo de color. Ver theme/glass.css. */
+@utility glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+}
+
+/* Vidrio más opaco: barras, paneles con mucho texto y elementos que flotan sobre otro contenido. */
+@utility glass-strong {
+  @apply glass;
+  background: var(--glass-bg-strong);
+}
+
+/* Relleno sutil dentro de una superficie de vidrio (cabeceras de tabla, totales, filas resaltadas). */
+@utility glass-inset {
+  background: rgb(255 255 255 / 0.45);
+}
+
 @utility card {
-  @apply rounded-[var(--radius-card)] border border-ink-200 bg-white shadow-sm;
+  @apply glass rounded-[var(--radius-card)];
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-extrabold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
 }
 
 @utility btn-primary {
-  @apply btn bg-brand-700 text-white hover:bg-brand-800;
+  @apply btn bg-brand-600 text-white shadow-[0_6px_18px_-6px_rgb(11_121_195/0.55)] hover:bg-brand-700;
 }
 
+/* Botón blanco con borde (secundario de los mockups), en vidrio. */
 @utility btn-secondary {
-  @apply btn border border-ink-200 bg-white text-ink-700 hover:bg-ink-100;
+  @apply btn border border-ink-200 bg-white/75 text-ink-900 shadow-none backdrop-blur-md hover:bg-white;
+}
+
+/* Sacar (naranja) y Meter (verde): los colores de las flechas de las ilustraciones. */
+@utility btn-accent {
+  @apply btn bg-accent-500 text-ink-900 shadow-[0_8px_20px_-8px_rgb(255_138_31/0.7)] hover:bg-accent-600;
+}
+@utility btn-success {
+  @apply btn bg-success-700 text-white shadow-[0_8px_20px_-8px_rgb(21_122_75/0.6)] hover:bg-success-800;
+}
+
+/* Píldora de filtro (categorías, "Solo por reponer"). Activa: marino sólido. */
+@utility chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white/75 px-4 py-2 text-sm font-extrabold text-ink-900 backdrop-blur-md transition-colors hover:bg-white aria-pressed:border-ink-900 aria-pressed:bg-ink-900 aria-pressed:text-white;
+}
+
+/* Control segmentado (Todos / Salidas / Entradas): contenedor + opciones. */
+@utility segmented {
+  @apply inline-flex gap-1 rounded-2xl bg-brand-100/70 p-1;
+}
+@utility segmented-option {
+  @apply rounded-xl px-4 py-2 text-sm font-extrabold text-ink-700 transition-colors hover:bg-white/60 aria-selected:bg-white aria-selected:text-ink-900 aria-selected:shadow-[0_1px_3px_rgb(7_59_94/0.12)] aria-pressed:bg-white aria-pressed:text-ink-900 aria-pressed:shadow-[0_1px_3px_rgb(7_59_94/0.12)];
+}
+
+/* Título de página de los mockups (Nunito 900, marino). */
+@utility page-title {
+  @apply text-3xl font-black tracking-tight text-ink-900 sm:text-4xl;
+}
+
+/* Etiqueta de sección en mayúsculas (INVENTARIO, VA GANANDO LA QUINCENA…). */
+@utility eyebrow {
+  @apply text-xs font-black tracking-[0.08em] uppercase;
 }
 
 @utility btn-danger {
-  @apply btn bg-danger-600 text-white hover:bg-danger-700;
+  @apply btn bg-danger-600 text-white shadow-[0_6px_18px_-6px_rgb(220_38_38/0.5)] hover:bg-danger-700;
 }
 
 @utility input {
-  @apply block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 aria-invalid:border-danger-600;
+  @apply block w-full rounded-xl border border-ink-300 bg-white/80 px-3.5 py-2.5 text-[15px] text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-200 focus:outline-none aria-invalid:border-danger-600;
 }
 
 @utility label {
-  @apply mb-1 block text-sm font-medium text-ink-700;
+  @apply mb-1.5 block text-sm font-extrabold text-ink-900;
 }

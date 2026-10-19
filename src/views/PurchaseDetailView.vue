@@ -78,7 +78,7 @@ async function voidPurchase() {
         <template #eyebrow>
           <RouterLink
             to="/admin/compras"
-            class="mb-1 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-800"
+            class="mb-1.5 inline-flex items-center gap-1 text-sm font-extrabold text-brand-600 hover:text-brand-800"
           >
             <Icon name="chevronLeft" :size="14" /> Compras
           </RouterLink>
@@ -109,7 +109,7 @@ async function voidPurchase() {
       <div v-else-if="data" class="space-y-6 transition-opacity" :class="{ 'opacity-60': loading }">
         <p
           v-if="voided"
-          class="flex items-center gap-2 rounded-lg bg-ink-100 px-4 py-3 text-sm text-ink-700"
+          class="flex items-center gap-2 rounded-xl glass-inset px-4 py-3 text-sm text-ink-700"
           role="status"
         >
           <Icon name="alert" :size="16" />
@@ -121,7 +121,7 @@ async function voidPurchase() {
           <div>
             <dt class="text-xs text-ink-500">Total</dt>
             <dd
-              class="mt-0.5 text-2xl font-bold text-ink-900"
+              class="mt-0.5 text-3xl font-black text-ink-900"
               :class="{ 'text-ink-400 line-through': voided }"
             >
               {{ formatMoney(data.total) }}
@@ -129,18 +129,18 @@ async function voidPurchase() {
           </div>
           <div>
             <dt class="text-xs text-ink-500">Compró</dt>
-            <dd class="mt-0.5 font-medium text-ink-900">{{ fullName(data.buyer) }}</dd>
+            <dd class="mt-0.5 font-extrabold text-ink-900">{{ fullName(data.buyer) }}</dd>
           </div>
           <div>
             <dt class="text-xs text-ink-500">Fecha</dt>
-            <dd class="mt-0.5 font-medium text-ink-900">{{ formatDateTime(data.purchasedAt) }}</dd>
+            <dd class="mt-0.5 font-extrabold text-ink-900">{{ formatDateTime(data.purchasedAt) }}</dd>
           </div>
           <div>
             <dt class="text-xs text-ink-500">Quincena</dt>
             <dd class="mt-0.5">
               <RouterLink
                 :to="`/admin/quincenas/${data.periodId}`"
-                class="font-medium text-brand-700 hover:underline"
+                class="font-extrabold text-brand-600 hover:underline"
                 >Ver quincena</RouterLink
               >
             </dd>
@@ -154,30 +154,36 @@ async function voidPurchase() {
         </dl>
 
         <div class="card overflow-hidden">
-          <table class="w-full text-sm">
-            <thead class="border-b border-ink-100 bg-ink-50 text-xs text-ink-500">
+          <table class="w-full text-[15px]">
+            <thead class="border-b border-ink-200/70 glass-inset text-[13px] text-ink-500">
               <tr>
-                <th scope="col" class="px-5 py-3 text-left font-medium">Producto</th>
-                <th scope="col" class="px-5 py-3 text-right font-medium">Cantidad</th>
-                <th scope="col" class="px-5 py-3 text-right font-medium">Precio c/u</th>
-                <th scope="col" class="px-5 py-3 text-right font-medium">Subtotal</th>
+                <th scope="col" class="px-5 py-3 text-left font-extrabold">Producto</th>
+                <th scope="col" class="px-5 py-3 text-right font-extrabold">Cantidad</th>
+                <th scope="col" class="px-5 py-3 text-right font-extrabold">Precio c/u</th>
+                <th scope="col" class="px-5 py-3 text-right font-extrabold">Subtotal</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-ink-100">
+            <tbody class="divide-y divide-ink-200/60">
               <tr v-for="item in data.items" :key="item.id">
-                <td class="px-5 py-3 font-medium text-ink-900">{{ item.product.name }}</td>
+                <td class="px-5 py-3 font-extrabold text-ink-900">{{ item.product.name }}</td>
                 <td class="px-5 py-3 text-right tabular-nums">
                   {{ withUnit(item.quantity, item.product.unit) }}
+                  <span v-if="item.packageCount" class="block text-xs text-ink-500">
+                    {{ item.packageCount }} {{ item.packageCount === 1 ? 'paquete' : 'paquetes' }} ×
+                    {{ item.unitsPerPackage }}
+                  </span>
                 </td>
                 <td class="px-5 py-3 text-right tabular-nums">{{ formatMoney(item.unitPrice) }}</td>
-                <td class="px-5 py-3 text-right font-semibold tabular-nums">
+                <td class="px-5 py-3 text-right font-extrabold tabular-nums">
                   {{ formatMoney(item.subtotal) }}
                 </td>
               </tr>
             </tbody>
-            <tfoot class="border-t border-ink-200 bg-ink-50">
+            <tfoot class="border-t border-ink-200 glass-inset">
               <tr>
-                <th scope="row" colspan="3" class="px-5 py-3 text-right font-medium text-ink-600">Total</th>
+                <th scope="row" colspan="3" class="px-5 py-3 text-right font-extrabold text-ink-600">
+                  Total
+                </th>
                 <td class="px-5 py-3 text-right font-bold text-ink-900 tabular-nums">
                   {{ formatMoney(data.total) }}
                 </td>

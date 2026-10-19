@@ -1,0 +1,160 @@
+/*
+ * Apariencia "vidrio" (glassmorphism) y áreas seguras del dispositivo.
+ *
+ * - Un fondo de color fijo (degradados suaves) detrás de toda la app; las superficies son vidrio
+ *   translúcido que lo desenfoca (utilidades `glass`, `glass-strong` y `card` en assets/main.css).
+ * - Áreas seguras: la app se dibuja de borde a borde (viewport-fit=cover) y se aparta de la barra de
+ *   estado, de los botones de navegación de Android y de los bordes con cámara o esquinas redondeadas.
+ *   En Android, Capacitor (SystemBars, insetsHandling "css") inyecta --safe-area-inset-*; en el resto
+ *   se usa env(safe-area-inset-*). Ionic ya aplica --ion-safe-area-* a cabeceras, pies, menús y avisos.
+ */
+:root {
+  --ion-safe-area-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --ion-safe-area-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --ion-safe-area-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --ion-safe-area-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+
+  /* Azul muy claro de los mockups (#EEF5FC) con manchas de color suaves para que el vidrio se note. */
+  --app-background:
+    radial-gradient(42rem 30rem at -8% -12%, rgb(11 121 195 / 0.22), transparent 64%),
+    radial-gradient(38rem 28rem at 108% -6%, rgb(127 189 230 / 0.4), transparent 62%),
+    radial-gradient(40rem 32rem at 96% 108%, rgb(255 138 31 / 0.16), transparent 64%),
+    radial-gradient(34rem 26rem at -6% 104%, rgb(61 155 216 / 0.2), transparent 62%),
+    linear-gradient(160deg, #e8f2fb 0%, #eef5fc 55%, #f6f1ea 100%);
+
+  /* Las tarjetas de los mockups son blancas: aquí, blanco translúcido con desenfoque (vidrio). */
+  --glass-bg: rgb(255 255 255 / 0.66);
+  --glass-bg-strong: rgb(255 255 255 / 0.82);
+  --glass-border: rgb(217 230 240 / 0.95);
+  --glass-shadow: 0 10px 30px -16px rgb(7 59 94 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.8);
+  --glass-blur: 18px;
+
+  /* Ionic: superficies translúcidas (el fondo lo pone cada página, ver más abajo). */
+  --ion-toolbar-background: transparent;
+  --ion-toolbar-border-color: rgb(255 255 255 / 0.6);
+  --ion-item-background: transparent;
+  --ion-border-color: rgb(12 40 64 / 0.1);
+}
+
+/* Sin desenfoque (navegadores viejos): el vidrio se vuelve casi opaco para que el texto se lea igual. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg: rgb(255 255 255 / 0.9);
+    --glass-bg-strong: rgb(255 255 255 / 0.95);
+  }
+}
+
+/* Contraste alto (Windows) o menos transparencia pedida por el sistema: superficies sólidas. */
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  :root {
+    --glass-bg: rgb(255 255 255 / 0.96);
+    --glass-bg-strong: #ffffff;
+    --glass-blur: 0px;
+  }
+}
+
+/* --- Fondo ------------------------------------------------------------------------------------- */
+
+html,
+body,
+ion-app {
+  background: #eef5fc;
+}
+ion-app,
+ion-router-outlet > .ion-page {
+  background: var(--app-background);
+  background-size: cover;
+}
+ion-content {
+  --background: transparent;
+}
+
+/* --- Áreas seguras del contenido ---------------------------------------------------------------- */
+
+/*
+ * Ionic aparta las cabeceras (barra de estado) y los pies (botones de navegación). El contenido se
+ * encarga de lo demás: abajo cuando no hay pie, arriba cuando no hay cabecera y a los lados siempre
+ * (celular en horizontal, con la cámara o los botones a un costado).
+ */
+ion-content {
+  --padding-start: var(--ion-safe-area-left);
+  --padding-end: var(--ion-safe-area-right);
+}
+ion-content:last-child {
+  --padding-bottom: var(--ion-safe-area-bottom);
+}
+.ion-page > ion-content:first-child {
+  --padding-top: var(--ion-safe-area-top);
+}
+
+/* --- Cabeceras y barras ------------------------------------------------------------------------- */
+
+ion-header.glass-header {
+  background: var(--glass-bg-strong);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 8px 24px -16px rgb(7 59 94 / 0.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+}
+ion-header.glass-header::after {
+  display: none; /* la sombra "md" de Ionic: aquí la da el vidrio */
+}
+ion-header.glass-header ion-toolbar {
+  --border-width: 0;
+}
+
+/* --- Menú lateral ------------------------------------------------------------------------------- */
+
+ion-menu {
+  --background: var(--glass-bg-strong);
+}
+ion-menu::part(container) {
+  border-right: 1px solid var(--glass-border);
+  box-shadow: 8px 0 32px -18px rgb(7 59 94 / 0.35);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+}
+ion-menu ion-footer {
+  border-top: 1px solid rgb(12 40 64 / 0.08);
+}
+ion-menu ion-footer::before {
+  display: none;
+}
+
+/* --- Modales ------------------------------------------------------------------------------------ */
+
+ion-modal {
+  --background: rgb(255 255 255 / 0.8);
+  --backdrop-opacity: 0.28;
+}
+ion-modal::part(content) {
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  backdrop-filter: blur(28px) saturate(170%);
+}
+ion-modal ion-header::after {
+  display: none;
+}
+@media (min-width: 640px) {
+  ion-modal::part(content) {
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 30px 80px -24px rgb(7 59 94 / 0.45);
+  }
+  /* Centrado como tarjeta: lejos de las barras del sistema, no necesita apartarse de ellas. */
+  ion-modal.dialog ion-content,
+  ion-modal.dialog-wide ion-content {
+    --padding-bottom: 0px;
+    --padding-start: 0px;
+    --padding-end: 0px;
+  }
+}
+
+/* --- Pestañas (ion-segment) --------------------------------------------------------------------- */
+
+ion-segment.glass-segment {
+  --background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+}

@@ -71,9 +71,9 @@ test('Luis saca 2 gaseosas y 1 yogur con su nombre y PIN', async () => {
   await typePin(page, LUIS.pin);
 
   const done = activeView(page).getByRole('status').filter({ hasText: '¡Listo, Luis!' });
-  await expect(done).toContainText('Luis sacó 2 botellas de Gaseosa 400 ml y 1 unidad de Yogur de fresa.');
+  await expect(done).toContainText('Sacaste 2 Gaseosa 400 ml y 1 Yogur de fresa.');
   await shot(page, 'k06-listo');
-  await done.getByRole('button', { name: 'Listo' }).click();
+  await done.getByRole('button', { name: 'Terminar' }).click();
 
   // Demo: Luis tenía 7 retiros de unidades; ahora 10 y pasa a ser quien más retira (Ana: 9).
   await expect(activeView(page).locator('header')).toContainText(LUIS.name);
@@ -90,9 +90,9 @@ test('meter productos y ver ranking y movimientos', async () => {
   await activeView(page).getByRole('button', { name: /Ana/ }).click();
   await typePin(page, ANA.pin);
   await expect(activeView(page).getByRole('status').filter({ hasText: '¡Listo, Ana!' })).toContainText(
-    'Ana metió 3 unidades de Manzanas.',
+    'Metiste 3 Manzanas.',
   );
-  await activeView(page).getByRole('button', { name: 'Listo' }).click();
+  await activeView(page).getByRole('button', { name: 'Terminar' }).click();
   expect(await stockText(page, 'Manzanas')).not.toBe(before);
 
   await openTab(page, 'Ranking');
@@ -100,7 +100,7 @@ test('meter productos y ver ranking y movimientos', async () => {
     LUIS.name,
   );
   await shot(page, 'k07-ranking');
-  await openTab(page, 'Movimientos');
+  await openTab(page, 'Historial');
   await expect(
     activeView(page)
       .getByText(/Ana Gómez\s+metió 3 unidades de/)
@@ -115,7 +115,7 @@ test('Atrás vuelve al paso anterior y Vaciar limpia la lista', async () => {
   await activeView(page)
     .getByRole('button', { name: /Continuar/ })
     .click();
-  await activeView(page).getByRole('button', { name: 'Atrás' }).click();
+  await activeView(page).getByRole('button', { name: 'Volver a elegir' }).click();
   const cart = activeView(page).getByRole('complementary', { name: 'Lo que elegiste' });
   await expect(cart).toContainText('Papas fritas');
   await cart.getByRole('button', { name: 'Vaciar' }).click();

@@ -20,11 +20,22 @@ import { formatMoney, fullName, parseMoneyInput, toCents } from '@/utils/format'
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const RECEIPT_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
+/**
+ * Línea de la compra. Por unidad: cantidad × precio. Por paquete: paquetes × unidades por paquete y lo
+ * pagado (precio por paquete, o el total si hubo descuento); el precio por unidad sale de total ÷ unidades
+ * y es el que se cobra a quien saque el producto.
+ */
 interface Line {
   uid: number;
   productId: string;
+  mode: 'unit' | 'package';
   quantity: number;
   unitPrice: string;
+  packageCount: number;
+  unitsPerPackage: number;
+  packagePrice: string;
+  /** Total pagado por la línea (por paquete). Vacío: paquetes × precio por paquete. */
+  total: string;
 }
 
 const { funding, purchases } = useServices();
@@ -39,7 +50,17 @@ const loadError = ref<string | null>(null);
 const ready = ref(false);
 
 let nextUid = 1;
-const newLine = (): Line => ({ uid: nextUid++, productId: '', quantity: 1, unitPrice: '' });
+const newLine = (): Line => ({
+  uid: nextUid++,
+  productId: '',
+  mode: 'unit',
+  quantity: 1,
+  unitPrice: '',
+  packageCount: 1,
+  unitsPerPackage: 6,
+  packagePrice: '',
+  total: '',
+});
 
 const form = reactive({
   periodId: '',
@@ -98,17 +119,49 @@ useOnEnter(load);
 const activeProducts = computed(() => lookups.products.filter((p) => p.isActive));
 const productUnit = (id: string) => activeProducts.value.find((p) => p.id === id)?.unit ?? '';
 
-function lineError(line: Line): string | null {
-  if (!line.productId) return 'Elige un producto';
-  if (form.lines.filter((l) => l.productId === line.productId).length > 1) return 'Producto repetido';
-  if (!Number.isInteger(line.quantity) || line.quantity < 1) return 'Cantidad inválida';
-  if (!parseMoneyInput(line.unitPrice)) return 'Precio inválido';
-  return null;
+const isCount = (n: number) => Number.isInteger(n) && n >= 1;
+
+/** Unidades de la línea (por paquete: paquetes × unidades por paquete). */
+function unitsOf(line: Line): number {
+  if (line.mode === 'unit') return isCount(line.quantity) ? line.quantity : 0;
+  return isCount(line.packageCount) && isCount(line.unitsPerPackage)
+    ? line.packageCount * line.unitsPerPackage
+    : 0;
+}
+
+/** Total por paquetes sugerido: paquetes × precio por paquete. */
+function packagesCents(line: Line): number {
+  const price = parseMoneyInput(line.packagePrice);
+  return price && isCount(line.packageCount) ? toCents(price) * line.packageCount : 0;
 }
 
 function subtotalCents(line: Line): number {
+  if (line.mode === 'package') {
+    const total = parseMoneyInput(line.total);
+    return total ? toCents(total) : packagesCents(line);
+  }
   const price = parseMoneyInput(line.unitPrice);
-  return price && line.quantity > 0 ? toCents(price) * line.quantity : 0;
+  return price && unitsOf(line) ? toCents(price) * unitsOf(line) : 0;
+}
+
+/** Precio por unidad que quedará guardado (lo que se cobra a quien saque el producto). */
+function unitPriceCents(line: Line): number {
+  const units = unitsOf(line);
+  return units ? Math.round(subtotalCents(line) / units) : 0;
+}
+
+function lineError(line: Line): string | null {
+  if (!line.productId) return 'Elige un producto';
+  if (form.lines.filter((l) => l.productId === line.productId).length > 1) return 'Producto repetido';
+  if (line.mode === 'unit') {
+    if (!isCount(line.quantity)) return 'Cantidad inválida';
+    if (!parseMoneyInput(line.unitPrice)) return 'Precio inválido';
+    return null;
+  }
+  if (!isCount(line.packageCount) || !isCount(line.unitsPerPackage)) return 'Paquetes inválidos';
+  if (line.total.trim() && !parseMoneyInput(line.total)) return 'Total inválido';
+  if (!subtotalCents(line)) return 'Escribe el precio por paquete o el total pagado';
+  return null;
 }
 
 const totalCents = computed(() => form.lines.reduce((sum, line) => sum + subtotalCents(line), 0));
@@ -141,11 +194,20 @@ async function submit() {
       store: form.store.trim() || null,
       purchasedAt: dateInputToISO(form.date),
       note: form.note.trim() || null,
-      items: form.lines.map((line) => ({
-        productId: line.productId,
-        quantity: line.quantity,
-        unitPrice: parseMoneyInput(line.unitPrice) as string,
-      })),
+      items: form.lines.map((line) =>
+        line.mode === 'unit'
+          ? {
+              productId: line.productId,
+              quantity: line.quantity,
+              unitPrice: parseMoneyInput(line.unitPrice) as string,
+            }
+          : {
+              productId: line.productId,
+              packageCount: line.packageCount,
+              unitsPerPackage: line.unitsPerPackage,
+              total: (subtotalCents(line) / 100).toFixed(2),
+            },
+      ),
       receipt: form.receipt,
     });
     toasts.success(
@@ -172,7 +234,7 @@ async function submit() {
         <template #eyebrow>
           <RouterLink
             to="/admin/compras"
-            class="mb-1 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-800"
+            class="mb-1.5 inline-flex items-center gap-1 text-sm font-extrabold text-brand-600 hover:text-brand-800"
           >
             <Icon name="chevronLeft" :size="14" /> Compras
           </RouterLink>
@@ -225,77 +287,181 @@ async function submit() {
         </div>
 
         <div class="card overflow-hidden">
-          <div class="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-            <h2 class="font-semibold text-ink-900">Productos comprados</h2>
+          <div class="flex items-center justify-between border-b border-ink-200/70 px-5 py-4">
+            <h2 class="text-[19px] font-black text-ink-900">Productos comprados</h2>
             <button type="button" class="btn-secondary px-3 py-1.5" @click="form.lines.push(newLine())">
               <Icon name="plus" :size="16" /> Agregar producto
             </button>
           </div>
-          <div class="divide-y divide-ink-100">
-            <div
-              v-for="(line, index) in form.lines"
-              :key="line.uid"
-              class="grid grid-cols-2 items-start gap-3 px-5 py-4 sm:grid-cols-[2fr_7rem_9rem_8rem_auto]"
-            >
-              <div class="col-span-2 sm:col-span-1">
-                <label :for="`pl-product-${line.uid}`" class="sr-only">Producto {{ index + 1 }}</label>
-                <select
-                  :id="`pl-product-${line.uid}`"
-                  v-model="line.productId"
-                  class="input"
-                  :aria-invalid="showErrors && Boolean(lineError(line))"
+          <div class="divide-y divide-ink-200/60">
+            <div v-for="(line, index) in form.lines" :key="line.uid" class="flex flex-col gap-3 px-5 py-4">
+              <div class="flex flex-wrap items-start gap-3">
+                <div class="min-w-0 flex-[1_1_220px]">
+                  <label :for="`pl-product-${line.uid}`" class="sr-only">Producto {{ index + 1 }}</label>
+                  <select
+                    :id="`pl-product-${line.uid}`"
+                    v-model="line.productId"
+                    class="input"
+                    :aria-invalid="showErrors && Boolean(lineError(line))"
+                  >
+                    <option value="" disabled>Elige un producto</option>
+                    <option v-for="p in activeProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
+                  </select>
+                  <p v-if="showErrors && lineError(line)" class="mt-1 text-xs text-danger-700">
+                    {{ lineError(line) }}
+                  </p>
+                </div>
+                <div class="segmented" role="group" :aria-label="`Cómo se compró el producto ${index + 1}`">
+                  <button
+                    type="button"
+                    class="segmented-option"
+                    :aria-pressed="line.mode === 'unit'"
+                    @click="line.mode = 'unit'"
+                  >
+                    Por unidad
+                  </button>
+                  <button
+                    type="button"
+                    class="segmented-option"
+                    :aria-pressed="line.mode === 'package'"
+                    @click="line.mode = 'package'"
+                  >
+                    Por paquete
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="rounded-md p-2.5 text-ink-400 hover:bg-white/70 hover:text-danger-700 disabled:opacity-30"
+                  :disabled="form.lines.length === 1"
+                  :aria-label="`Quitar producto ${index + 1}`"
+                  @click="removeLine(line.uid)"
                 >
-                  <option value="" disabled>Elige un producto</option>
-                  <option v-for="p in activeProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
-                </select>
-                <p v-if="showErrors && lineError(line)" class="mt-1 text-xs text-danger-700">
-                  {{ lineError(line) }}
+                  <Icon name="x" :size="16" />
+                </button>
+              </div>
+
+              <!-- Por unidad: cantidad × precio -->
+              <div
+                v-if="line.mode === 'unit'"
+                class="grid grid-cols-2 items-end gap-3 sm:grid-cols-[8rem_10rem_1fr]"
+              >
+                <div>
+                  <label :for="`pl-qty-${line.uid}`" class="text-xs font-bold text-ink-500">Cantidad</label>
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      :id="`pl-qty-${line.uid}`"
+                      v-model.number="line.quantity"
+                      type="number"
+                      min="1"
+                      step="1"
+                      class="input tabular-nums"
+                    />
+                    <span class="text-xs text-ink-500">{{ productUnit(line.productId) }}</span>
+                  </div>
+                </div>
+                <div>
+                  <label :for="`pl-price-${line.uid}`" class="text-xs font-bold text-ink-500"
+                    >Precio unitario</label
+                  >
+                  <input
+                    :id="`pl-price-${line.uid}`"
+                    v-model="line.unitPrice"
+                    type="text"
+                    inputmode="decimal"
+                    class="input tabular-nums"
+                    placeholder="Ej.: 2500"
+                  />
+                </div>
+                <p
+                  class="col-span-2 pb-2.5 text-right font-extrabold text-ink-900 tabular-nums sm:col-span-1"
+                >
+                  {{ formatMoney(subtotalCents(line) / 100) }}
                 </p>
               </div>
-              <div>
-                <label :for="`pl-qty-${line.uid}`" class="text-xs text-ink-500 sm:sr-only">Cantidad</label>
-                <div class="flex items-center gap-1.5">
-                  <input
-                    :id="`pl-qty-${line.uid}`"
-                    v-model.number="line.quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    class="input tabular-nums"
-                  />
-                  <span class="text-xs text-ink-500">{{ productUnit(line.productId) }}</span>
+
+              <!-- Por paquete: paquetes × unidades, precio por paquete o total pagado -->
+              <div v-else class="flex flex-col gap-2">
+                <div class="grid grid-cols-2 items-end gap-3 sm:grid-cols-4">
+                  <div>
+                    <label :for="`pl-packs-${line.uid}`" class="text-xs font-bold text-ink-500"
+                      >Paquetes</label
+                    >
+                    <input
+                      :id="`pl-packs-${line.uid}`"
+                      v-model.number="line.packageCount"
+                      type="number"
+                      min="1"
+                      step="1"
+                      class="input tabular-nums"
+                    />
+                  </div>
+                  <div>
+                    <label :for="`pl-per-${line.uid}`" class="text-xs font-bold text-ink-500"
+                      >Unidades por paquete</label
+                    >
+                    <input
+                      :id="`pl-per-${line.uid}`"
+                      v-model.number="line.unitsPerPackage"
+                      type="number"
+                      min="1"
+                      step="1"
+                      class="input tabular-nums"
+                    />
+                  </div>
+                  <div>
+                    <label :for="`pl-pack-price-${line.uid}`" class="text-xs font-bold text-ink-500"
+                      >Precio por paquete</label
+                    >
+                    <input
+                      :id="`pl-pack-price-${line.uid}`"
+                      v-model="line.packagePrice"
+                      type="text"
+                      inputmode="decimal"
+                      class="input tabular-nums"
+                      placeholder="Ej.: 13800"
+                    />
+                  </div>
+                  <div>
+                    <label :for="`pl-total-${line.uid}`" class="text-xs font-bold text-ink-500"
+                      >Total pagado</label
+                    >
+                    <input
+                      :id="`pl-total-${line.uid}`"
+                      v-model="line.total"
+                      type="text"
+                      inputmode="decimal"
+                      class="input tabular-nums"
+                      :placeholder="
+                        packagesCents(line) ? String(packagesCents(line) / 100) : 'Si hubo descuento'
+                      "
+                      :aria-describedby="`pl-calc-${line.uid}`"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label :for="`pl-price-${line.uid}`" class="text-xs text-ink-500 sm:sr-only"
-                  >Precio unitario</label
+                <p
+                  :id="`pl-calc-${line.uid}`"
+                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-xl bg-brand-50/90 px-3.5 py-2 text-sm text-ink-700"
+                  aria-live="polite"
                 >
-                <input
-                  :id="`pl-price-${line.uid}`"
-                  v-model="line.unitPrice"
-                  type="text"
-                  inputmode="decimal"
-                  class="input tabular-nums"
-                  placeholder="Precio c/u"
-                />
+                  <span>
+                    <strong class="text-ink-900 tabular-nums">{{ unitsOf(line) }}</strong>
+                    {{ unitsOf(line) === 1 ? 'unidad' : 'unidades' }} ·
+                    <strong class="text-ink-900 tabular-nums">{{
+                      formatMoney(unitPriceCents(line) / 100)
+                    }}</strong>
+                    c/u
+                    <span class="text-ink-500">(lo que se cobra a quien lo saque)</span>
+                  </span>
+                  <strong class="text-ink-900 tabular-nums">{{
+                    formatMoney(subtotalCents(line) / 100)
+                  }}</strong>
+                </p>
               </div>
-              <p class="self-center text-right font-semibold text-ink-900 tabular-nums">
-                {{ formatMoney(subtotalCents(line) / 100) }}
-              </p>
-              <button
-                type="button"
-                class="self-center justify-self-end rounded-md p-2 text-ink-400 hover:bg-ink-100 hover:text-danger-700 disabled:opacity-30"
-                :disabled="form.lines.length === 1"
-                :aria-label="`Quitar producto ${index + 1}`"
-                @click="removeLine(line.uid)"
-              >
-                <Icon name="x" :size="16" />
-              </button>
             </div>
           </div>
-          <div class="flex items-center justify-between bg-ink-50 px-5 py-4">
+          <div class="flex items-center justify-between glass-inset px-5 py-4">
             <span class="text-sm text-ink-600">Total</span>
-            <span class="text-2xl font-bold text-ink-900">{{ formatMoney(totalCents / 100) }}</span>
+            <span class="text-3xl font-black text-ink-900">{{ formatMoney(totalCents / 100) }}</span>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FridgeLogo from '@/components/brand/FridgeLogo.vue';
 import { IonContent, IonPage } from '@ionic/vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -47,11 +48,11 @@ async function save() {
 <template>
   <IonPage>
     <IonContent>
-      <div class="grid min-h-full place-items-center bg-gradient-to-b from-brand-50 to-ink-50 px-4 py-10">
+      <div class="grid min-h-full place-items-center px-4 py-10">
         <div class="w-full max-w-md">
           <div class="mb-6 text-center">
-            <img src="/favicon.svg" alt="" class="mx-auto mb-3 size-14" />
-            <h1 class="text-2xl font-bold tracking-tight text-ink-900">Conectar con el servidor</h1>
+            <FridgeLogo variant="full" class="mx-auto mb-3 size-16" />
+            <h1 class="page-title">Conectar con el servidor</h1>
             <p class="mt-2 text-ink-500">
               Escribe la dirección del equipo donde corre FridgeYA en la red de la oficina.
             </p>
@@ -87,7 +88,7 @@ async function save() {
             <button
               v-if="config.storedUrl()"
               type="button"
-              class="w-full text-sm font-medium text-ink-500"
+              class="min-h-11 w-full text-sm font-extrabold text-ink-500"
               @click="router.replace('/')"
             >
               Cancelar

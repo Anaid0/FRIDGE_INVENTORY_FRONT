@@ -57,7 +57,7 @@ test('tras 5 PIN incorrectos la persona queda bloqueada; el admin restablece el 
   });
   expect(reset.ok()).toBe(true);
   await typePin(page, '7351');
-  await expect(done(page, 'Marta')).toContainText('Marta sacó 1 unidad de Manzanas.');
+  await expect(done(page, 'Marta')).toContainText('Sacaste 1 Manzanas.');
 });
 
 test('cada persona cambia su PIN en la tablet y luego lo usa', async ({ page }) => {
@@ -79,7 +79,7 @@ test('cada persona cambia su PIN en la tablet y luego lo usa', async ({ page }) 
   await typePin(page, ANA.pin);
   await expect(activeView(page).getByRole('alert')).toContainText('PIN incorrecto');
   await typePin(page, '9147');
-  await expect(done(page, 'Ana')).toContainText('Ana sacó 1 paquete de Papas fritas.');
+  await expect(done(page, 'Ana')).toContainText('Sacaste 1 Papas fritas.');
 });
 
 test('si otra persona saca algo mientras alguien elige, la lista se ajusta y se avisa', async ({
@@ -135,7 +135,7 @@ test('si el admin revoca la tablet con la app abierta, deja de funcionar al inst
 
   // La siguiente petición a la API (el ranking) recibe 401 DEVICE_REVOKED: la pantalla cambia antes de que
   // la pestaña llegue a quedar seleccionada, por eso solo se toca.
-  await activeView(page).locator('ion-segment-button', { hasText: 'Ranking' }).click();
+  await activeView(page).getByRole('tab', { name: 'Ranking' }).click();
   await expect(
     activeView(page).getByRole('heading', { name: 'Esta tablet fue desautorizada' }),
   ).toBeVisible();

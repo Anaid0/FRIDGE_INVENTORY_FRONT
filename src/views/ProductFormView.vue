@@ -11,6 +11,7 @@ import { useServices } from '@/services/container';
 import { ApiError, errorMessage } from '@/services/errors';
 import { useLookupsStore } from '@/stores/lookups';
 import { useToastStore } from '@/stores/toasts';
+import { parseMoneyInput, toCents } from '@/utils/format';
 
 const props = defineProps<{ id?: string }>();
 const { catalog } = useServices();
@@ -25,6 +26,7 @@ const form = reactive({
   unit: 'unidad',
   minStock: 0,
   categoryId: '',
+  referencePrice: '',
   initialQuantity: 0,
   isActive: true,
 });
@@ -46,6 +48,7 @@ function reset() {
     unit: 'unidad',
     minStock: 0,
     categoryId: '',
+    referencePrice: '',
     initialQuantity: 0,
     isActive: true,
   });
@@ -68,6 +71,7 @@ async function load() {
       unit: product.unit,
       minStock: product.minStock,
       categoryId: product.categoryId ?? '',
+      referencePrice: product.referencePrice ? String(toCents(product.referencePrice) / 100) : '',
       isActive: product.isActive,
     });
     currentStock.value = product.quantity;
@@ -104,6 +108,7 @@ async function submit() {
     unit: form.unit.trim() || 'unidad',
     minStock: Number(form.minStock) || 0,
     categoryId: form.categoryId || null,
+    referencePrice: form.referencePrice.trim() ? parseMoneyInput(form.referencePrice) : null,
   };
   try {
     if (props.id) {
@@ -137,7 +142,7 @@ async function submit() {
         <template #eyebrow>
           <RouterLink
             to="/admin/productos"
-            class="mb-1 inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-800"
+            class="mb-1.5 inline-flex items-center gap-1 text-sm font-extrabold text-brand-600 hover:text-brand-800"
           >
             <Icon name="chevronLeft" :size="14" /> Productos
           </RouterLink>
@@ -187,6 +192,23 @@ async function submit() {
           </FormField>
         </div>
 
+        <FormField
+          id="p-ref-price"
+          label="Precio de referencia"
+          optional
+          hint="Lo que se saca se cobra al precio de la última compra; este se usa si el producto nunca se ha comprado (regalos, stock inicial)."
+          :error="fieldErrors.referencePrice"
+        >
+          <input
+            id="p-ref-price"
+            v-model="form.referencePrice"
+            type="text"
+            inputmode="decimal"
+            class="input tabular-nums"
+            placeholder="Ej.: 2500"
+          />
+        </FormField>
+
         <FormField id="p-category" label="Categoría" optional :error="fieldErrors.categoryId">
           <div class="flex gap-2">
             <select id="p-category" v-model="form.categoryId" class="input">
@@ -202,7 +224,7 @@ async function submit() {
             </button>
           </div>
         </FormField>
-        <div v-if="showNewCategory" class="flex gap-2 rounded-lg bg-ink-50 p-3">
+        <div v-if="showNewCategory" class="flex gap-2 rounded-xl glass-inset p-3">
           <input
             v-model="newCategory"
             type="text"
@@ -239,7 +261,7 @@ async function submit() {
           />
         </FormField>
 
-        <div v-else class="flex items-center justify-between rounded-lg bg-ink-50 px-4 py-3 text-sm">
+        <div v-else class="flex items-center justify-between rounded-xl glass-inset px-4 py-3 text-sm">
           <span class="text-ink-600">
             Stock actual: <strong class="text-ink-900">{{ currentStock }}</strong> (cambia solo con
             movimientos)
@@ -249,7 +271,7 @@ async function submit() {
           </label>
         </div>
 
-        <div class="flex justify-end gap-2 border-t border-ink-100 pt-5">
+        <div class="flex justify-end gap-2 border-t border-ink-200/70 pt-5">
           <RouterLink to="/admin/productos" class="btn-secondary">Cancelar</RouterLink>
           <button type="submit" class="btn-primary" :disabled="saving || !form.name.trim()">
             {{ saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear producto' }}

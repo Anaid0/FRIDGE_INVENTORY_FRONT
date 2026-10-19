@@ -53,6 +53,20 @@ describe('createHttpServices', () => {
     expect((form.get('receipt') as File).name).toBe('recibo.png');
   });
 
+  it('ranking por quincena: en vivo por id, estado y "calcular el más hambriento"', async () => {
+    const { services, calls } = recordingServices();
+    await services.movements.topWithdrawers({ periodId: 'q1' }, 10);
+    await services.movements.topWithdrawers('period');
+    await services.funding.ranking('q1');
+    await services.funding.computeRanking('q1');
+    expect(calls.map((c) => [c.method, c.url, c.params])).toEqual([
+      ['get', '/stats/top-withdrawers', { periodId: 'q1', limit: 10 }],
+      ['get', '/stats/top-withdrawers', { period: 'period' }],
+      ['get', '/funding-periods/q1/ranking', undefined],
+      ['post', '/funding-periods/q1/ranking', undefined],
+    ]);
+  });
+
   it('usa las rutas y métodos de la API', async () => {
     const { services, calls } = recordingServices();
     await services.movements.topWithdrawers('week', 3);

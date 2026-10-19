@@ -44,17 +44,17 @@ test.describe('Administración (Ionic)', () => {
     const view = activeView(page);
     await expect(view.getByRole('listitem').filter({ hasText: ANA.name })).toContainText('PIN asignado');
 
-    await view.getByRole('button', { name: 'Agregar persona' }).click();
-    const dialog = page.locator('ion-modal').filter({ hasText: 'Agregar persona' });
-    await dialog.getByLabel('Nombre').fill(name);
-    await dialog.getByLabel('Apellido').fill('E2E');
-    await dialog.getByLabel('PIN de 4 dígitos').fill('1234');
-    await dialog.getByRole('button', { name: 'Agregar' }).click();
-    await expect(dialog.getByText('Ese PIN es muy fácil de adivinar')).toBeVisible();
-    await dialog.getByRole('button', { name: 'Generar' }).click();
-    await expect(dialog.getByLabel('PIN de 4 dígitos')).toHaveValue(/^\d{4}$/);
-    await shot(page, '03-persona-dialogo');
-    await dialog.getByRole('button', { name: 'Agregar' }).click();
+    // Panel lateral "Agregar persona" (formulario en la misma página).
+    const form = view.getByRole('complementary', { name: 'Agregar persona' });
+    await form.getByLabel('Nombre', { exact: true }).fill(name);
+    await form.getByLabel('Apellido').fill('E2E');
+    await form.getByLabel('PIN de 4 dígitos').fill('1234');
+    await form.getByRole('button', { name: 'Agregar persona' }).click();
+    await expect(form.getByText('Ese PIN es muy fácil de adivinar')).toBeVisible();
+    await form.getByRole('button', { name: 'Generar' }).click();
+    await expect(form.getByLabel('PIN de 4 dígitos')).toHaveValue(/^\d{4}$/);
+    await shot(page, '03-persona-formulario');
+    await form.getByRole('button', { name: 'Agregar persona' }).click();
     await expect(view.getByRole('listitem').filter({ hasText: `${name} E2E` })).toContainText('PIN asignado');
     await shot(page, '04-personas');
   });
@@ -75,7 +75,7 @@ test.describe('Administración (Ionic)', () => {
     await shot(page, '06-productos');
 
     await page.goto('/admin/movimientos?kind=out');
-    await expect(activeView(page).locator('table:not(.chart-data-table) tbody tr').first()).toContainText(
+    await expect(activeView(page).locator('table tbody tr[data-movement]').first()).toContainText(
       'Papas fritas',
     );
     await shot(page, '07-movimientos');

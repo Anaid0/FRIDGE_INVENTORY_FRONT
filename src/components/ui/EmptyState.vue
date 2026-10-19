@@ -9,10 +9,10 @@ withDefaults(defineProps<{ title: string; message?: string; icon?: IconName }>()
 
 <template>
   <div class="flex flex-col items-center px-6 py-12 text-center">
-    <span class="mb-3 grid size-11 place-items-center rounded-full bg-ink-100 text-ink-500">
+    <span class="mb-3 grid size-12 place-items-center rounded-2xl bg-brand-100/80 text-brand-600">
       <Icon :name="icon" :size="22" />
     </span>
-    <p class="font-semibold text-ink-800">{{ title }}</p>
+    <p class="font-extrabold text-ink-900">{{ title }}</p>
     <p v-if="message" class="mt-1 max-w-sm text-sm text-ink-500">{{ message }}</p>
     <div v-if="$slots.default" class="mt-4"><slot /></div>
   </div>

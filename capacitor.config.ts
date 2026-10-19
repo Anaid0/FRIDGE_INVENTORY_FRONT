@@ -21,7 +21,9 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
   },
   plugins: {
-    StatusBar: { overlaysWebView: false },
+    // Barras del sistema visibles y app de borde a borde: el contenido se aparta de ellas con las áreas
+    // seguras (--safe-area-inset-*, que Capacitor inyecta en el WebView). Íconos oscuros: fondo claro.
+    SystemBars: { insetsHandling: 'css', initialViewportFitValueHint: 'cover', style: 'LIGHT' },
   },
 };
 

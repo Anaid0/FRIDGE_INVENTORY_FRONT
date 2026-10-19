@@ -96,7 +96,7 @@ async function revoke() {
       />
 
       <div
-        class="mb-5 flex items-start gap-3 rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-ink-700"
+        class="mb-5 flex items-start gap-3 rounded-xl border border-brand-200/70 bg-brand-50/70 p-4 text-sm text-ink-700"
       >
         <span class="text-brand-700"><Icon name="tablet" /></span>
         <p>
@@ -110,7 +110,7 @@ async function revoke() {
 
       <div v-else class="card overflow-hidden transition-opacity" :class="{ 'opacity-60': loading && data }">
         <EmptyState v-if="data && !data.length" icon="tablet" title="No hay tablets autorizadas" />
-        <ul v-else class="divide-y divide-ink-100">
+        <ul v-else class="divide-y divide-ink-200/60">
           <li
             v-for="device in data ?? []"
             :key="device.id"
@@ -118,7 +118,7 @@ async function revoke() {
           >
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
-                <p class="font-semibold" :class="device.isActive ? 'text-ink-900' : 'text-ink-400'">
+                <p class="font-extrabold" :class="device.isActive ? 'text-ink-900' : 'text-ink-400'">
                   {{ device.name }}
                 </p>
                 <Badge :tone="device.isActive ? 'brand' : 'neutral'">{{

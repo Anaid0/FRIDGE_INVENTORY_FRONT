@@ -32,6 +32,33 @@ En producción, `VITE_API_URL` define la URL de la API (por defecto `/api`).
 | `npm run test:e2e`                | Playwright de punta a punta contra la API real (ver más abajo)   |
 | `npm run test:e2e:report`         | Abre el reporte HTML del último e2e                              |
 
+## Diseño
+
+- **Marca e ilustraciones**: el logo y las ilustraciones salen de `design-assets/FridgeYA – Logo e
+  ilustraciones.html` (exportado de Claude Design) y viven como componentes SVG en `src/components/brand/`:
+  `FridgeLogo`, `MoveIllustration` (Sacar / Meter), `LoadingFridge` (Cargando, la única animada en el diseño),
+  `RankingPodium`, `PeriodPodium` (podio con nombres), `HungriestMonkey`, `HungriestCard` y `PeriodRankingResult`.
+  Animaciones propias además del diseño: el brazo del mono saca/mete en la nevera y el más hambriento golpea con los
+  cubiertos. Las animaciones se detienen si el sistema pide reducir el
+  movimiento. Paleta del logo en los tokens de `src/assets/main.css`: `brand` (azul `#0B79C3`, marino `#073B5E`),
+  `accent` (naranja `#FF8A1F`) y `success` (verde de "Meter"). Letra de la marca: Nunito (`font-display`),
+  empaquetada con la app.
+- **Íconos de Android y splash**: las imágenes fuente están en `assets/`; si cambia el logo, se regeneran con
+  `npx @capacitor/assets generate --android --iconBackgroundColor '#0b79c3' --splashBackgroundColor '#e6f3fb' --splashBackgroundColorDark '#073b5e'`.
+- **Vidrio (glassmorphism)**: un fondo de color fijo (degradados) detrás de toda la app y superficies
+  translúcidas que lo desenfocan. Usa las utilidades `glass`, `glass-strong`, `glass-inset` y `card` de
+  `src/assets/main.css`. Los valores (fondo, opacidad, desenfoque) y la integración con Ionic (cabeceras, menú,
+  modales y pestañas) están en `src/theme/glass.css`. Si el navegador no soporta `backdrop-filter`, o el
+  sistema pide menos transparencia o contraste alto, las superficies pasan a ser casi opacas.
+- **Áreas seguras**: la app se dibuja de borde a borde (`viewport-fit=cover`) y se aparta de la barra de estado,
+  de los botones o la barra de gestos de Android y de los recortes de cámara, también en horizontal. En Android,
+  Capacitor (plugin `SystemBars`, `insetsHandling: 'css'`) informa esas medidas como `--safe-area-inset-*`; en
+  los demás casos se usa `env(safe-area-inset-*)`. Ionic las aplica a las cabeceras, pies, menús y avisos, y
+  `glass.css` al contenido.
+- **Responsive**: el mismo diseño sirve para celular, tablet (vertical u horizontal) y escritorio. En la tablet,
+  con poco ancho, la lista de lo elegido queda fija abajo; en pantallas anchas va en una columna a la derecha.
+  El menú de administración es fijo desde 992 px y desplegable por debajo de ese ancho.
+
 ## Estructura
 
 ```
@@ -99,8 +126,9 @@ sin ella no se pueden publicar actualizaciones de la misma app.
    (ej. `192.168.1.50:3000`) y prueba la conexión antes de guardarla. Se puede cambiar después desde
    "Cambiar servidor" en la pantalla de la tablet sin autorizar o sin conexión.
 2. **Autorizar**: "Autorizar esta tablet" → login de admin → "Usar este dispositivo como tablet".
-3. Listo: pantalla completa (sin barra de estado) y siempre encendida mientras funciona como tablet. El botón
-   "atrás" de Android retrocede un paso y nunca cierra la app.
+3. Listo: la pantalla queda siempre encendida mientras funciona como tablet. La barra de estado y los botones
+   de navegación de Android siguen visibles y la app no se dibuja debajo de ellos. El botón "atrás" de Android
+   retrocede un paso y nunca cierra la app.
 
 ### Servidor y red
 
@@ -141,7 +169,7 @@ sin ella no se pueden publicar actualizaciones de la misma app.
 
 | Ruta                                           | Qué hace                                                                                                            |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `/`                                            | Modo tablet (pantalla completa, sin login): se construye en la fase 13                                              |
+| `/`                                            | Modo tablet (sin login): sacar, meter, ranking y movimientos                                                        |
 | `/admin/login`                                 | Login de administrador (email + contraseña)                                                                         |
 | `/admin`                                       | Inicio: quién más retira, indicadores, últimos movimientos, saldo, stock bajo                                       |
 | `/admin/productos` (+ `/nuevo`, `/:id/editar`) | Stock; Meter/Sacar a nombre de una persona; crear/editar productos y categorías                                     |

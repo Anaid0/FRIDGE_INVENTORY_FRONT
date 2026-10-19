@@ -59,7 +59,7 @@ async function toggleActive() {
         subtitle="Cuentas con email y contraseña para entrar a esta administración."
       >
         <template #actions>
-          <button type="button" class="btn-primary" @click="openForm(null)">
+          <button type="button" class="btn-primary min-h-11 px-[18px]" @click="openForm(null)">
             <Icon name="plus" :size="16" /> Agregar administrador
           </button>
         </template>
@@ -68,14 +68,14 @@ async function toggleActive() {
       <ErrorState v-if="error && !data" :message="error" @retry="run" />
 
       <div v-else class="card overflow-hidden transition-opacity" :class="{ 'opacity-60': loading && data }">
-        <ul class="divide-y divide-ink-100">
+        <ul class="divide-y divide-ink-200/60">
           <li
             v-for="user in data ?? []"
             :key="user.id"
             class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center"
           >
             <div class="min-w-0 flex-1">
-              <p class="font-semibold" :class="user.isActive ? 'text-ink-900' : 'text-ink-400'">
+              <p class="font-extrabold" :class="user.isActive ? 'text-ink-900' : 'text-ink-400'">
                 {{ user.fullName }}
                 <span v-if="user.id === auth.user?.id" class="text-xs font-normal text-ink-500">(tú)</span>
               </p>

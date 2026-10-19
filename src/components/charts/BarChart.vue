@@ -71,7 +71,7 @@ function fill(row: BarRow): string {
 
         <span
           v-if="active === row.key && row.detail"
-          class="pointer-events-none absolute -top-9 left-[min(60%,14rem)] z-10 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs shadow-md"
+          class="pointer-events-none absolute -top-9 left-[min(60%,14rem)] z-10 glass-strong rounded-lg px-3 py-1.5 text-xs"
           role="tooltip"
         >
           <strong class="text-ink-900">{{ row.valueLabel }}</strong>

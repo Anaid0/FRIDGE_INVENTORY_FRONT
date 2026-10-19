@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import Icon from './Icon.vue';
 
 const props = defineProps<{ page: number; pageSize: number; total: number }>();
 const emit = defineEmits<{ change: [page: number] }>();
@@ -11,27 +10,30 @@ const to = computed(() => Math.min(props.page * props.pageSize, props.total));
 </script>
 
 <template>
-  <nav class="flex items-center justify-between gap-4 px-4 py-3 text-sm text-ink-500" aria-label="Paginación">
-    <p class="tabular-nums">{{ from }}–{{ to }} de {{ total }}</p>
-    <div class="flex items-center gap-1">
+  <nav
+    class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm text-ink-500"
+    aria-label="Paginación"
+  >
+    <p class="tabular-nums">Mostrando {{ from }}–{{ to }} de {{ total }}</p>
+    <div class="flex items-center gap-1.5">
       <button
         type="button"
-        class="btn-secondary px-2 py-1.5"
+        class="btn-secondary min-h-11"
         :disabled="page <= 1"
         aria-label="Página anterior"
         @click="emit('change', page - 1)"
       >
-        <Icon name="chevronLeft" :size="16" />
+        Anterior
       </button>
-      <span class="px-2 tabular-nums">{{ page }} / {{ pages }}</span>
       <button
         type="button"
-        class="btn-secondary px-2 py-1.5"
+        :class="page >= pages ? 'btn-secondary' : 'btn-primary'"
+        class="min-h-11"
         :disabled="page >= pages"
         aria-label="Página siguiente"
         @click="emit('change', page + 1)"
       >
-        <Icon name="chevronRight" :size="16" />
+        Siguiente
       </button>
     </div>
   </nav>

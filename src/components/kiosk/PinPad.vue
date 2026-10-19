@@ -7,8 +7,15 @@ import Icon from '../ui/Icon.vue';
  * Emite `complete` al escribir el cuarto dígito. Acepta también el teclado físico.
  */
 const props = withDefaults(
-  defineProps<{ label: string; error?: string | null; disabled?: boolean; length?: number }>(),
-  { error: null, disabled: false, length: 4 },
+  defineProps<{
+    label: string;
+    error?: string | null;
+    disabled?: boolean;
+    length?: number;
+    /** Nota bajo el teclado (p. ej. cuántos intentos hay antes del bloqueo). */
+    hint?: string | null;
+  }>(),
+  { error: null, disabled: false, length: 4, hint: null },
 );
 const emit = defineEmits<{ complete: [pin: string] }>();
 
@@ -51,11 +58,11 @@ defineExpose({ reset });
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-xs select-none">
-    <p class="text-center text-lg font-semibold text-ink-800">{{ label }}</p>
+  <div class="mx-auto w-full max-w-[26rem] select-none">
+    <p class="eyebrow text-center text-sm! text-ink-500">{{ label }}</p>
 
     <div
-      class="my-5 flex justify-center gap-4"
+      class="mt-4 flex justify-center gap-5"
       :class="{ shake: shaking }"
       role="img"
       :aria-label="`${digits.length} de ${length} dígitos`"
@@ -63,20 +70,26 @@ defineExpose({ reset });
       <span
         v-for="i in length"
         :key="i"
-        class="size-5 rounded-full border-2 transition-colors"
-        :class="i <= digits.length ? 'border-brand-700 bg-brand-700' : 'border-ink-300 bg-white'"
+        class="size-[26px] rounded-full border-[3px] transition-colors"
+        :class="
+          error && !digits.length
+            ? 'border-danger-600/60 bg-white/60'
+            : i <= digits.length
+              ? 'border-ink-900 bg-ink-900'
+              : 'border-ink-400 bg-white/60'
+        "
       />
     </div>
 
     <p
-      class="mb-4 min-h-10 text-center text-sm font-medium text-danger-700"
+      class="mt-2 mb-3 flex min-h-10 items-center justify-center text-center text-sm font-bold text-danger-700"
       role="alert"
       aria-live="assertive"
     >
       {{ error ?? '' }}
     </p>
 
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-3 gap-3.5">
       <button
         v-for="digit in ['1', '2', '3', '4', '5', '6', '7', '8', '9']"
         :key="digit"
@@ -96,9 +109,11 @@ defineExpose({ reset });
         aria-label="Borrar"
         @click="backspace"
       >
-        <Icon name="chevronLeft" :size="26" />
+        <Icon name="backspace" :size="30" :stroke="2" />
       </button>
     </div>
+
+    <p v-if="hint" class="mt-5 text-center text-sm text-ink-500">{{ hint }}</p>
   </div>
 </template>
 
@@ -106,25 +121,32 @@ defineExpose({ reset });
 .key {
   display: grid;
   place-items: center;
-  height: 4.5rem;
-  border-radius: 1rem;
-  background: white;
-  border: 1px solid var(--color-ink-200);
-  font-size: 1.75rem;
-  font-weight: 600;
+  height: 5.25rem;
+  border-radius: 1.25rem;
+  background: rgb(226 238 248 / 0.7);
+  border: 1px solid rgb(255 255 255 / 0.7);
+  font-size: 2.125rem;
+  font-weight: 900;
   color: var(--color-ink-900);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-  transition: background-color 0.1s;
+  transition:
+    background-color 0.1s,
+    transform 0.1s;
 }
 .key:active:not(:disabled) {
-  background: var(--color-brand-50);
+  background: rgb(207 232 247 / 0.95); /* brand-200 */
+  transform: scale(0.96);
 }
 .key:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
 }
 .key-muted {
-  background: var(--color-ink-100);
-  color: var(--color-ink-600);
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-ink-700);
+}
+.key-muted:disabled {
+  opacity: 0.35;
 }
 .shake {
   animation: shake 0.35s;
@@ -140,9 +162,24 @@ defineExpose({ reset });
     transform: translateX(-4px);
   }
 }
+@media (max-height: 760px) {
+  .key {
+    height: 4.5rem;
+    font-size: 1.85rem;
+  }
+}
+@media (max-height: 560px) {
+  .key {
+    height: 3.25rem;
+    font-size: 1.4rem;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .shake {
     animation: none;
+  }
+  .key {
+    transition: none;
   }
 }
 </style>

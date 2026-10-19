@@ -23,6 +23,8 @@ const product = (id: string, quantity: number): Product => ({
   minStock: 0,
   isLowStock: false,
   categoryId: null,
+  referencePrice: null,
+  currentPrice: null,
   isActive: true,
   createdAt: '',
   updatedAt: '',
@@ -38,7 +40,9 @@ function setup(kioskToken: string | null = 'tablet-token') {
     { user: { id: 'u', name: 'Ana', lastname: 'G' }, totalWithdrawn: 9, withdrawals: 3 },
   ]);
   vi.mocked(kiosk.latestMovements).mockResolvedValue([]);
-  vi.mocked(kiosk.people).mockResolvedValue([{ id: 'u', name: 'Ana', lastname: 'G', initials: 'AG' }]);
+  vi.mocked(kiosk.people).mockResolvedValue([
+    { id: 'u', name: 'Ana', lastname: 'G', initials: 'AG', pinLockedUntil: null },
+  ]);
   return { ...fakes, store: useKioskStore() };
 }
 

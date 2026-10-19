@@ -16,6 +16,8 @@ const product = (id: string, name: string): Product => ({
   minStock: 0,
   isLowStock: true,
   categoryId: null,
+  referencePrice: null,
+  currentPrice: null,
   isActive: true,
   createdAt: '',
   updatedAt: '',
@@ -109,5 +111,32 @@ describe('PurchaseFormView', () => {
     await wrapper.get('form').trigger('submit');
     expect(wrapper.text()).toContain('Producto repetido');
     expect(services.purchases.register).not.toHaveBeenCalled();
+  });
+
+  it('por paquete: calcula unidades y precio por unidad; el total pagado admite descuentos', async () => {
+    const { wrapper, services } = await setup();
+    await wrapper.get('[id^="pl-product-"]').setValue('g');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Por paquete')!
+      .trigger('click');
+    await wrapper.get('[id^="pl-packs-"]').setValue(2);
+    await wrapper.get('[id^="pl-per-"]').setValue(5);
+    await wrapper.get('[id^="pl-pack-price-"]').setValue('15000');
+    const calc = () => wrapper.get('[id^="pl-calc-"]').text().replace(/\s/g, ' ');
+    expect(calc()).toMatch(/10 unidades · \$ 3\.000 c\/u/);
+
+    // Descuento en el segundo paquete: 15.000 + 9.000
+    await wrapper.get('[id^="pl-total-"]').setValue('24.000');
+    expect(calc()).toMatch(/\$ 2\.400 c\/u/);
+
+    vi.mocked(services.purchases.register).mockResolvedValue({ id: 'c1', total: '24000.00' } as never);
+    await wrapper.get('form').trigger('submit');
+    await flushPromises();
+    expect(services.purchases.register).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [{ productId: 'g', packageCount: 2, unitsPerPackage: 5, total: '24000.00' }],
+      }),
+    );
   });
 });

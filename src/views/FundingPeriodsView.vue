@@ -92,7 +92,7 @@ async function submit() {
           <button
             v-if="auth.isAdmin"
             type="button"
-            class="btn-primary"
+            class="btn-primary min-h-11 px-[18px]"
             :disabled="Boolean(current)"
             @click="openDialog = true"
           >
@@ -108,7 +108,7 @@ async function submit() {
 
       <div v-else class="space-y-6 transition-opacity" :class="{ 'opacity-60': loading && data }">
         <div v-if="current">
-          <h2 class="mb-3 text-sm font-semibold tracking-wide text-ink-500 uppercase">Quincena actual</h2>
+          <h2 class="eyebrow mb-3 text-ink-500">Quincena actual</h2>
           <RouterLink
             :to="`/admin/quincenas/${current.periodId}`"
             class="block rounded-[var(--radius-card)] hover:ring-2 hover:ring-brand-200"
@@ -128,24 +128,26 @@ async function submit() {
         />
 
         <div v-if="history.length" class="card overflow-hidden">
-          <h2 class="border-b border-ink-100 px-5 py-4 font-semibold text-ink-900">Quincenas anteriores</h2>
+          <h2 class="border-b border-ink-200/70 px-5 py-4 text-[19px] font-black text-ink-900">
+            Quincenas anteriores
+          </h2>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="bg-ink-50 text-xs text-ink-500">
+            <table class="w-full text-[15px]">
+              <thead class="glass-inset text-[13px] text-ink-500">
                 <tr>
-                  <th scope="col" class="px-5 py-3 text-left font-medium">Quincena</th>
-                  <th scope="col" class="px-5 py-3 text-left font-medium">Estado</th>
-                  <th scope="col" class="px-5 py-3 text-right font-medium">Recaudado</th>
-                  <th scope="col" class="px-5 py-3 text-right font-medium">Gastado</th>
-                  <th scope="col" class="px-5 py-3 text-right font-medium">Saldo</th>
+                  <th scope="col" class="px-5 py-3 text-left font-extrabold">Quincena</th>
+                  <th scope="col" class="px-5 py-3 text-left font-extrabold">Estado</th>
+                  <th scope="col" class="px-5 py-3 text-right font-extrabold">Recaudado</th>
+                  <th scope="col" class="px-5 py-3 text-right font-extrabold">Gastado</th>
+                  <th scope="col" class="px-5 py-3 text-right font-extrabold">Saldo</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-ink-100">
-                <tr v-for="p in history" :key="p.periodId" class="hover:bg-ink-50">
+              <tbody class="divide-y divide-ink-200/60">
+                <tr v-for="p in history" :key="p.periodId" class="hover:bg-white/55">
                   <td class="px-5 py-3">
                     <RouterLink
                       :to="`/admin/quincenas/${p.periodId}`"
-                      class="font-medium text-ink-900 hover:text-brand-700"
+                      class="font-extrabold text-ink-900 hover:text-brand-700"
                     >
                       {{ p.name }}
                     </RouterLink>
@@ -157,7 +159,7 @@ async function submit() {
                   <td class="px-5 py-3 text-right tabular-nums">{{ formatMoney(p.collected) }}</td>
                   <td class="px-5 py-3 text-right tabular-nums">{{ formatMoney(p.spent) }}</td>
                   <td
-                    class="px-5 py-3 text-right font-semibold tabular-nums"
+                    class="px-5 py-3 text-right font-extrabold tabular-nums"
                     :class="p.isOverspent ? 'text-danger-700' : 'text-ink-900'"
                   >
                     {{ formatMoney(p.balance) }}

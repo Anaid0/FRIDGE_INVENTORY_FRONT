@@ -8,8 +8,8 @@ import { RouterLink } from 'vue-router';
     <IonContent>
       <div class="grid min-h-full place-items-center px-4 text-center">
         <div>
-          <p class="text-sm font-semibold text-brand-700">404</p>
-          <h1 class="mt-2 text-2xl font-bold text-ink-900">Esta página no existe</h1>
+          <p class="eyebrow text-brand-600">404</p>
+          <h1 class="mt-2 page-title">Esta página no existe</h1>
           <RouterLink to="/" class="btn-primary mt-6">Volver al inicio</RouterLink>
         </div>
       </div>

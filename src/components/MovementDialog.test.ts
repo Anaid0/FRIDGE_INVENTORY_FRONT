@@ -17,6 +17,8 @@ const gaseosa: Product = {
   minStock: 1,
   isLowStock: false,
   categoryId: null,
+  referencePrice: null,
+  currentPrice: null,
   isActive: true,
   createdAt: '',
   updatedAt: '',
@@ -54,6 +56,7 @@ function result(performedBy: string) {
       registeredBy: 'u-admin',
       note: null,
       purchaseItemId: null,
+      unitPrice: null,
       createdAt: '',
     },
   };
