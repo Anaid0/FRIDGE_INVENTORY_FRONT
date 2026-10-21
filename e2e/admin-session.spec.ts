@@ -8,7 +8,7 @@ test('sin sesión, la administración pide login y vuelve a la página pedida', 
   await expect(page).toHaveURL(/\/admin\/login\?redirect=\/admin\/personas/);
   // Se llena el formulario que ya está en pantalla (conserva el ?redirect).
   await page.getByLabel('Email').fill(ADMIN.email);
-  await page.getByLabel('Contraseña').fill(ADMIN.password);
+  await page.getByLabel('Contraseña', { exact: true }).fill(ADMIN.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page).toHaveURL(/\/admin\/personas$/);
 });

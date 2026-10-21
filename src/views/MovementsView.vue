@@ -1,31 +1,33 @@
 <script setup lang="ts">
 import AdminPage from '@/layouts/AdminPage.vue';
 import { useOnEnter } from '@/composables/useOnEnter';
-import { computed, reactive, ref, watch } from 'vue';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
-import MovementTypeBadge from '@/components/MovementTypeBadge.vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import MovementDayList from '@/components/MovementDayList.vue';
+import MovementLegend from '@/components/MovementLegend.vue';
+import BaseDialog from '@/components/ui/BaseDialog.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import ErrorState from '@/components/ui/ErrorState.vue';
 import Icon from '@/components/ui/Icon.vue';
 import PageHeader from '@/components/ui/PageHeader.vue';
-import Pagination from '@/components/ui/Pagination.vue';
 import { useAsync } from '@/composables/useAsync';
 import type { MovementFilter } from '@/domain/inputs';
 import type { MovementView } from '@/domain/models';
 import { useServices } from '@/services/container';
+import { errorMessage } from '@/services/errors';
 import { useLookupsStore } from '@/stores/lookups';
 import { daysAgo, endOfDayISO, formatPeriodRange, startOfDayISO, toLocalDateInput } from '@/utils/dates';
 import { formatNumber, fullName } from '@/utils/format';
 
 /**
- * Filtro "tipo" combinado (tipo + origen). El control segmentado muestra Todos / Salidas / Entradas; las
- * otras dos opciones siguen funcionando por URL (enlaces desde otras pantallas).
+ * Filtro "tipo" combinado (tipo + origen). El control segmentado muestra Todos / Retiros / Ingresos; las
+ * otras dos opciones se eligen en "Filtros" (o llegan por URL desde otras pantallas).
  */
 const KINDS = {
   '': { label: 'Todos', filter: {} },
-  out: { label: 'Salidas', filter: { type: 'OUT', source: 'MANUAL' } },
-  in: { label: 'Entradas', filter: { type: 'IN' } },
-  purchase: { label: 'Entradas por compra', filter: { source: 'PURCHASE' } },
+  out: { label: 'Retiros', filter: { type: 'OUT', source: 'MANUAL' } },
+  in: { label: 'Ingresos', filter: { type: 'IN' } },
+  purchase: { label: 'Ingresos por compra', filter: { source: 'PURCHASE' } },
   void: { label: 'Anulaciones de compra', filter: { source: 'PURCHASE_VOID' } },
 } as const satisfies Record<string, { label: string; filter: MovementFilter }>;
 type Kind = keyof typeof KINDS;
@@ -44,66 +46,96 @@ const filtersFromRoute = () => ({
   performedBy: q('performedBy'),
   from: q('from'),
   to: q('to'),
-  page: Number(q('page')) || 1,
 });
 const filters = reactive(filtersFromRoute());
-
-const { data, error, loading, run } = useAsync(() =>
-  movements.list({
-    ...KINDS[filters.kind].filter,
-    productId: filters.productId || undefined,
-    performedBy: filters.performedBy || undefined,
-    from: filters.from ? startOfDayISO(filters.from) : undefined,
-    to: filters.to ? endOfDayISO(filters.to) : undefined,
-    page: filters.page,
-    pageSize: PAGE_SIZE,
-  }),
-);
 const currentPeriod = useAsync(() => funding.current());
 
+// --- Lista paginada: la primera página reemplaza; "Cargar más" agrega la siguiente al final ---
+const items = shallowRef<MovementView[]>([]);
+const page = ref(1);
+const listQuery = (pageNumber: number): MovementFilter => ({
+  ...KINDS[filters.kind].filter,
+  productId: filters.productId || undefined,
+  performedBy: filters.performedBy || undefined,
+  from: filters.from ? startOfDayISO(filters.from) : undefined,
+  to: filters.to ? endOfDayISO(filters.to) : undefined,
+  page: pageNumber,
+  pageSize: PAGE_SIZE,
+});
+const { data, error, loading, run: runFirst } = useAsync(() => movements.list(listQuery(1)));
+async function run() {
+  const result = await runFirst();
+  if (result) {
+    items.value = result.items;
+    page.value = 1;
+  }
+}
+
+const loadingMore = ref(false);
+const moreError = ref<string | null>(null);
+const remaining = computed(() => Math.max(0, (data.value?.total ?? 0) - items.value.length));
+async function loadMore() {
+  loadingMore.value = true;
+  moreError.value = null;
+  try {
+    const next = await movements.list(listQuery(page.value + 1));
+    // Si mientras tanto cambió un filtro, la página que llegó ya no corresponde.
+    if (loading.value) return;
+    const seen = new Set(items.value.map((m) => m.id));
+    items.value = [...items.value, ...next.items.filter((m) => !seen.has(m.id))];
+    page.value = next.page;
+  } catch (e) {
+    moreError.value = errorMessage(e);
+  } finally {
+    loadingMore.value = false;
+  }
+}
+
 // Los filtros viven en la URL: se pueden compartir y el botón "atrás" funciona.
+// `all=1` distingue "Todo" (sin fechas, elegido a propósito) de entrar sin filtros (rango por defecto).
 watch(
   () => ({ ...filters }),
-  (now, before) => {
-    if (before && now.page === before.page) filters.page = 1;
-    const query = Object.fromEntries(
-      Object.entries({ ...filters, page: filters.page > 1 ? String(filters.page) : '' }).filter(([, v]) => v),
-    );
-    void router.replace({ query });
+  () => {
+    const query = Object.fromEntries(Object.entries({ ...filters }).filter(([, v]) => v));
+    if (!filters.from && !filters.to) query.all = '1';
+    // Solo si seguimos aquí: si la sesión venció, ya se fue al login y no hay que tocar su URL.
+    if (route.name === 'movements') void router.replace({ query });
     void run();
   },
 );
 
-// Al (re)entrar se leen los filtros de la URL (p. ej. "Ver movimientos" de un producto).
-useOnEnter(() => {
-  const fromRoute = filtersFromRoute();
-  if (JSON.stringify(fromRoute) !== JSON.stringify({ ...filters })) Object.assign(filters, fromRoute);
-  else void run();
-  void lookups.ensureProducts().catch(() => undefined);
-  void lookups.ensureUsers().catch(() => undefined);
-  void currentPeriod.run();
-});
-
-const hasFilters = computed(() =>
-  Boolean(filters.kind || filters.productId || filters.performedBy || filters.from || filters.to),
-);
-function clearFilters() {
-  customRange.value = false;
-  Object.assign(filters, { kind: '', productId: '', performedBy: '', from: '', to: '', page: 1 });
+/** Rango por defecto: la quincena abierta; si no hay, los últimos 30 días. */
+function defaultRange() {
+  return presets.value.period ?? presets.value['30d']!;
 }
 
-// --- Rango de fechas: atajos (esta quincena, hoy, 7 y 30 días) o fechas a mano ---
-type Range = '' | 'period' | 'today' | '7d' | '30d' | 'custom';
+// Al (re)entrar se leen los filtros de la URL (p. ej. "Ver movimientos" de un producto).
+// Sin ningún filtro en la URL se abre en la quincena actual.
+useOnEnter(async () => {
+  void lookups.ensureProducts().catch(() => undefined);
+  void lookups.ensureUsers().catch(() => undefined);
+  const fromRoute = filtersFromRoute();
+  if (!Object.keys(route.query).length) {
+    if (!currentPeriod.data.value) await currentPeriod.run();
+    else void currentPeriod.run();
+    Object.assign(fromRoute, defaultRange());
+  } else void currentPeriod.run();
+  if (JSON.stringify(fromRoute) !== JSON.stringify({ ...filters })) Object.assign(filters, fromRoute);
+  else void run();
+});
+
+// --- Rango de fechas: atajos (esta quincena, hoy, 7 y 30 días, todo) o fechas a mano ---
+type Range = 'all' | 'period' | 'today' | '7d' | '30d' | 'custom';
 const customRange = ref(false);
 const today = () => toLocalDateInput();
 const presets = computed((): Partial<Record<Range, { from: string; to: string }>> => {
   const period = currentPeriod.data.value;
   return {
-    '': { from: '', to: '' },
     ...(period ? { period: { from: period.startDate, to: period.endDate } } : {}),
     today: { from: today(), to: today() },
     '7d': { from: toLocalDateInput(daysAgo(6)), to: '' },
     '30d': { from: toLocalDateInput(daysAgo(29)), to: '' },
+    all: { from: '', to: '' },
   };
 });
 const range = computed<Range>({
@@ -120,259 +152,311 @@ const range = computed<Range>({
     if (preset) Object.assign(filters, preset);
   },
 });
+const shortRange = (from: string, to: string) => formatPeriodRange(from, to, true).replace(/ \d{4}$/, '');
+const RANGE_LABELS: Record<Exclude<Range, 'period' | 'custom'>, string> = {
+  today: 'Hoy',
+  '7d': 'Últimos 7 días',
+  '30d': 'Últimos 30 días',
+  all: 'Todo',
+};
 const periodLabel = computed(() => {
   const period = currentPeriod.data.value;
-  return period
-    ? `Esta quincena · ${formatPeriodRange(period.startDate, period.endDate, true).replace(/ \d{4}$/, '')}`
-    : '';
+  return period ? `Esta quincena · ${shortRange(period.startDate, period.endDate)}` : '';
+});
+/** Texto del chip de fechas: "Esta quincena · 16 – 31 oct", "Últimos 7 días", "Desde 3 oct"… */
+const rangeLabel = computed(() => {
+  const value = range.value;
+  if (value === 'period') return periodLabel.value;
+  if (value !== 'custom') return RANGE_LABELS[value];
+  const day = (d: string) => shortRange(d, d).replace(/^\d+ – /, '');
+  if (filters.from && filters.to) return shortRange(filters.from, filters.to);
+  if (filters.from) return `Desde ${day(filters.from)}`;
+  if (filters.to) return `Hasta ${day(filters.to)}`;
+  return 'Elegir fechas';
 });
 
-// --- Agrupado por día ---
-const TIME = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' });
-const DAY = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
-
-function dayLabel(key: string): string {
-  const text = DAY.format(new Date(`${key}T12:00:00`)).replace(',', '');
-  if (key === today()) return `Hoy · ${text}`;
-  if (key === toLocalDateInput(daysAgo(1))) return `Ayer · ${text}`;
-  return text;
+// --- Menú del chip de fechas ---
+const rangeMenu = ref(false);
+function pickRange(value: Range) {
+  rangeMenu.value = false;
+  if (value === 'custom') {
+    customRange.value = true;
+    filtersOpen.value = true;
+  } else range.value = value;
 }
+function closeMenu(event: Event) {
+  if (!(event.target as HTMLElement | null)?.closest?.('[data-range-menu]')) rangeMenu.value = false;
+}
+function onKey(event: KeyboardEvent) {
+  if (event.key === 'Escape') rangeMenu.value = false;
+}
+onMounted(() => {
+  document.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', onKey);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeMenu);
+  document.removeEventListener('keydown', onKey);
+});
 
-const groups = computed(() => {
-  const result: { key: string; label: string; items: MovementView[] }[] = [];
-  for (const m of data.value?.items ?? []) {
-    const key = toLocalDateInput(new Date(m.createdAt));
-    const last = result[result.length - 1];
-    if (last?.key === key) last.items.push(m);
-    else result.push({ key, label: dayLabel(key), items: [m] });
-  }
-  return result;
+// --- Diálogo "Filtros" (tipo detallado, producto, persona y fechas) ---
+const filtersOpen = ref(false);
+/** Filtros que no se ven en el segmentado ni en el chip de fechas: el punto/número del botón. */
+const activeCount = computed(
+  () => [filters.productId, filters.performedBy, !SEGMENTS.includes(filters.kind)].filter(Boolean).length,
+);
+const hasFilters = computed(() => Boolean(filters.kind || filters.productId || filters.performedBy));
+function clearFilters() {
+  Object.assign(filters, { kind: '', productId: '', performedBy: '' });
+}
+const productName = computed(
+  () => lookups.products.find((p) => p.id === filters.productId)?.name ?? 'Producto',
+);
+const personName = computed(() => {
+  const user = lookups.users.find((u) => u.id === filters.performedBy);
+  return user ? fullName(user) : 'Persona';
 });
 </script>
 
 <template>
   <AdminPage title="Movimientos">
-    <section>
-      <PageHeader
-        title="Movimientos"
-        subtitle="Todo lo que entra y sale de la nevera. Es un registro de auditoría: nada se borra."
-      />
+    <section class="mx-auto max-w-3xl">
+      <PageHeader title="Movimientos" subtitle="Registro de auditoría: nada se borra.">
+        <template #badge><MovementLegend /></template>
+      </PageHeader>
 
-      <div class="card mb-5 flex flex-wrap items-center gap-2.5 rounded-[18px] p-3">
-        <div role="group" aria-label="Tipo de movimiento" class="segmented max-sm:w-full">
+      <div class="flex gap-1.5">
+        <div role="group" aria-label="Tipo de movimiento" class="segmented grid min-w-0 flex-1 grid-cols-3">
           <button
             v-for="kind in SEGMENTS"
             :key="kind"
             type="button"
-            class="segmented-option min-h-10 max-sm:flex-1"
+            class="segmented-option min-h-10 px-2"
             :aria-pressed="filters.kind === kind"
             @click="filters.kind = kind"
           >
             {{ KINDS[kind].label }}
           </button>
         </div>
-        <select
-          v-model="filters.productId"
-          class="input min-h-11 w-auto py-2 max-sm:w-full"
-          aria-label="Producto"
+        <button
+          type="button"
+          class="glass relative flex min-h-11 shrink-0 items-center gap-1.5 rounded-2xl px-3 text-[13px] font-extrabold text-ink-900"
+          aria-haspopup="dialog"
+          :aria-label="activeCount ? `Filtros (${activeCount} activos)` : 'Filtros'"
+          @click="filtersOpen = true"
         >
-          <option value="">Todos los productos</option>
-          <option v-for="p in lookups.products" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
-        <select
-          v-model="filters.performedBy"
-          class="input min-h-11 w-auto py-2 max-sm:w-full"
-          aria-label="Persona"
-        >
-          <option value="">Todas las personas</option>
-          <option v-for="u in lookups.users" :key="u.id" :value="u.id">{{ fullName(u) }}</option>
-        </select>
-        <label
-          class="relative flex min-h-11 items-center gap-2 rounded-xl border border-ink-300 bg-white/80 pr-2 pl-3.5 text-[15px] font-bold text-ink-900 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-200 max-sm:w-full"
-        >
-          <Icon name="calendar" :size="18" class="text-ink-700" />
-          <span class="sr-only">Fechas</span>
-          <select
-            v-model="range"
-            class="min-w-0 flex-1 cursor-pointer appearance-none border-0 bg-transparent py-2 pr-6 outline-none focus-visible:outline-none"
+          <Icon name="filter" :size="16" :stroke="2.2" /> Filtros
+          <span
+            v-if="activeCount"
+            class="absolute -top-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-accent-500 text-[11px] font-black text-ink-900"
+            aria-hidden="true"
+            >{{ activeCount }}</span
           >
-            <option value="">Todas las fechas</option>
-            <option v-if="presets.period" value="period">{{ periodLabel }}</option>
-            <option value="today">Hoy</option>
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-            <option value="custom">Elegir fechas…</option>
-          </select>
-          <Icon
-            name="chevronRight"
-            :size="14"
-            class="pointer-events-none absolute right-3 rotate-90 text-ink-500"
-          />
-        </label>
-        <template v-if="range === 'custom'">
-          <label class="flex items-center gap-2 text-sm font-bold text-ink-700">
-            Desde <input v-model="filters.from" type="date" class="input min-h-11 w-auto py-2" />
-          </label>
-          <label class="flex items-center gap-2 text-sm font-bold text-ink-700">
-            Hasta
-            <input v-model="filters.to" type="date" class="input min-h-11 w-auto py-2" :min="filters.from" />
-          </label>
-        </template>
-        <div class="ml-auto flex items-center gap-3 text-sm text-ink-500">
+        </button>
+      </div>
+
+      <div class="mt-2 mb-3 flex flex-wrap items-center gap-1.5">
+        <div class="relative" data-range-menu>
           <button
-            v-if="hasFilters"
             type="button"
-            class="min-h-11 font-extrabold text-brand-600 hover:text-brand-800"
-            @click="clearFilters"
+            class="flex min-h-8 items-center gap-1 rounded-full bg-ink-900/8 px-3 text-[12px] font-extrabold text-ink-900 hover:bg-ink-900/12"
+            aria-haspopup="menu"
+            :aria-expanded="rangeMenu"
+            :aria-label="`Fechas: ${rangeLabel}. Cambiar`"
+            @click="rangeMenu = !rangeMenu"
           >
-            Limpiar filtros
+            {{ rangeLabel }}
+            <Icon name="chevronRight" :size="12" :stroke="2.6" class="rotate-90 text-ink-500" />
           </button>
-          <span v-if="data" class="tabular-nums" role="status"
-            >{{ formatNumber(data.total) }} {{ data.total === 1 ? 'movimiento' : 'movimientos' }}</span
+          <div
+            v-if="rangeMenu"
+            role="menu"
+            class="glass-strong absolute top-full left-0 z-20 mt-1.5 flex min-w-52 flex-col rounded-2xl p-1.5"
           >
+            <button
+              v-if="presets.period"
+              type="button"
+              role="menuitemradio"
+              :aria-checked="range === 'period'"
+              class="min-h-11 rounded-xl px-3 text-left text-sm font-bold text-ink-900 hover:bg-brand-50 aria-checked:bg-ink-900/8 aria-checked:font-extrabold"
+              @click="pickRange('period')"
+            >
+              {{ periodLabel }}
+            </button>
+            <button
+              v-for="(label, key) in RANGE_LABELS"
+              :key="key"
+              type="button"
+              role="menuitemradio"
+              :aria-checked="range === key"
+              class="min-h-11 rounded-xl px-3 text-left text-sm font-bold text-ink-900 hover:bg-brand-50 aria-checked:bg-ink-900/8 aria-checked:font-extrabold"
+              @click="pickRange(key)"
+            >
+              {{ label }}
+            </button>
+            <button
+              type="button"
+              role="menuitemradio"
+              :aria-checked="range === 'custom'"
+              class="min-h-11 rounded-xl px-3 text-left text-sm font-bold text-ink-900 hover:bg-brand-50 aria-checked:bg-ink-900/8 aria-checked:font-extrabold"
+              @click="pickRange('custom')"
+            >
+              Elegir fechas…
+            </button>
+          </div>
         </div>
+        <span
+          v-if="data"
+          class="flex min-h-8 items-center rounded-full bg-ink-900/8 px-3 text-[12px] font-bold text-ink-700 tabular-nums"
+          role="status"
+          >{{ formatNumber(data.total) }} {{ data.total === 1 ? 'movimiento' : 'movimientos' }}</span
+        >
+        <button
+          v-if="!SEGMENTS.includes(filters.kind)"
+          type="button"
+          class="flex min-h-8 items-center gap-1 rounded-full bg-brand-100 px-3 text-[12px] font-extrabold text-brand-700 hover:bg-brand-200"
+          :aria-label="`Quitar filtro: ${KINDS[filters.kind].label}`"
+          @click="filters.kind = ''"
+        >
+          {{ KINDS[filters.kind].label }} <Icon name="x" :size="12" :stroke="2.6" />
+        </button>
+        <button
+          v-if="filters.productId"
+          type="button"
+          class="flex min-h-8 items-center gap-1 rounded-full bg-brand-100 px-3 text-[12px] font-extrabold text-brand-700 hover:bg-brand-200"
+          :aria-label="`Quitar filtro de producto: ${productName}`"
+          @click="filters.productId = ''"
+        >
+          {{ productName }} <Icon name="x" :size="12" :stroke="2.6" />
+        </button>
+        <button
+          v-if="filters.performedBy"
+          type="button"
+          class="flex min-h-8 items-center gap-1 rounded-full bg-brand-100 px-3 text-[12px] font-extrabold text-brand-700 hover:bg-brand-200"
+          :aria-label="`Quitar filtro de persona: ${personName}`"
+          @click="filters.performedBy = ''"
+        >
+          {{ personName }} <Icon name="x" :size="12" :stroke="2.6" />
+        </button>
       </div>
 
       <ErrorState v-if="error && !data" :message="error" @retry="run" />
 
-      <div v-else class="card overflow-hidden transition-opacity" :class="{ 'opacity-60': loading && data }">
+      <!-- Cargando la primera vez: filas de esqueleto -->
+      <div v-else-if="!data" class="glass-strong rounded-[18px] px-3" aria-busy="true" aria-label="Cargando">
+        <div
+          v-for="n in 5"
+          :key="n"
+          class="flex items-center gap-3 border-b border-ink-900/8 py-3 last:border-0"
+        >
+          <span class="size-8 animate-pulse rounded-[10px] bg-ink-900/8" />
+          <span class="flex flex-1 flex-col gap-1.5">
+            <span class="h-3.5 w-2/5 animate-pulse rounded bg-ink-900/8" />
+            <span class="h-3 w-3/5 animate-pulse rounded bg-ink-900/6" />
+          </span>
+        </div>
+      </div>
+
+      <div v-else-if="!items.length" class="card">
         <EmptyState
-          v-if="data && !data.items.length"
           icon="list"
           title="No hay movimientos"
           :message="
-            hasFilters
-              ? 'Ningún movimiento coincide con los filtros.'
-              : 'Todavía nadie ha metido ni sacado productos.'
+            hasFilters || range !== 'all'
+              ? 'Ningún movimiento coincide con los filtros o las fechas.'
+              : 'Todavía nadie ha retirado ni ingresado productos.'
           "
-        />
-        <div v-else class="overflow-x-auto">
-          <table class="mv-table w-full text-left text-[15px] md:min-w-[760px]">
-            <caption class="sr-only">
-              Movimientos agrupados por día
-            </caption>
-            <thead class="text-[13px] text-ink-500 max-md:sr-only">
-              <tr>
-                <th scope="col" class="py-3.5 pr-3 pl-5 font-extrabold">Hora</th>
-                <th scope="col" class="px-3 py-3.5 font-extrabold">Movimiento</th>
-                <th scope="col" class="px-3 py-3.5 font-extrabold">Producto</th>
-                <th scope="col" class="px-3 py-3.5 text-right font-extrabold">Cant.</th>
-                <th scope="col" class="px-3 py-3.5 text-center font-extrabold">Stock</th>
-                <th scope="col" class="py-3.5 pr-5 pl-3 font-extrabold">Quién</th>
-              </tr>
-            </thead>
-            <tbody v-if="!data">
-              <tr>
-                <td colspan="6" class="px-5 py-5">
-                  <div class="h-5 w-1/3 animate-pulse rounded bg-ink-100" />
-                </td>
-              </tr>
-            </tbody>
-            <tbody v-for="group in groups" :key="group.key">
-              <tr data-day>
-                <th
-                  colspan="6"
-                  scope="colgroup"
-                  class="bg-white/45 px-5 py-2.5 text-[13px] font-extrabold tracking-[0.04em] text-ink-700 uppercase"
-                >
-                  {{ group.label }}
-                </th>
-              </tr>
-              <tr v-for="m in group.items" :key="m.id" data-movement class="border-t border-ink-200/60">
-                <td class="mv-time py-3 pr-3 pl-5 whitespace-nowrap text-ink-500">
-                  <time :datetime="m.createdAt">{{ TIME.format(new Date(m.createdAt)) }}</time>
-                </td>
-                <td class="mv-type px-3 py-3"><MovementTypeBadge :type="m.type" :source="m.source" /></td>
-                <td class="mv-product px-3 py-3">
-                  <p class="font-extrabold text-ink-900">{{ m.product.name }}</p>
-                  <RouterLink
-                    v-if="m.purchaseId"
-                    :to="`/admin/compras/${m.purchaseId}`"
-                    class="text-xs font-bold text-brand-600 hover:underline"
-                  >
-                    {{ m.note ?? 'Ver compra' }}
-                  </RouterLink>
-                  <p v-else-if="m.note" class="text-xs text-ink-500">{{ m.note }}</p>
-                </td>
-                <td
-                  class="mv-qty px-3 py-3 text-right font-extrabold tabular-nums"
-                  :class="m.type === 'OUT' ? 'text-accent-700' : 'text-success-700'"
-                >
-                  {{ m.type === 'OUT' ? '−' : '+' }}{{ m.quantity }}
-                </td>
-                <td class="mv-stock px-3 py-3 text-center whitespace-nowrap text-ink-500 tabular-nums">
-                  <span class="sr-only">Stock: </span>{{ m.stockBefore }} → {{ m.stockAfter }}
-                </td>
-                <td class="mv-who py-3 pr-5 pl-3">
-                  <p class="font-bold text-ink-800">{{ fullName(m.performedBy) }}</p>
-                  <p v-if="m.performedBy.id !== m.registeredBy.id" class="text-xs text-ink-500">
-                    registrado por {{ fullName(m.registeredBy) }}
-                  </p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <Pagination
-          v-if="data && data.items.length"
-          class="border-t border-ink-200/60"
-          :page="data.page"
-          :page-size="data.pageSize"
-          :total="data.total"
-          @change="filters.page = $event"
-        />
+        >
+          <button v-if="range !== 'all'" type="button" class="btn-secondary" @click="range = 'all'">
+            Ver todo el historial
+          </button>
+        </EmptyState>
       </div>
+
+      <div v-else class="transition-opacity" :class="{ 'opacity-60': loading }">
+        <MovementDayList :movements="items" detailed />
+        <p v-if="moreError" class="mt-3 text-center text-[13px] font-bold text-danger-700" role="alert">
+          {{ moreError }}
+        </p>
+        <button
+          v-if="remaining > 0"
+          type="button"
+          class="glass mt-3.5 flex min-h-11 w-full items-center justify-center rounded-xl text-[13px] font-extrabold text-brand-700 hover:bg-white/80 disabled:opacity-60"
+          :disabled="loadingMore || loading"
+          @click="loadMore"
+        >
+          {{ loadingMore ? 'Cargando…' : `Cargar más · quedan ${formatNumber(remaining)}` }}
+        </button>
+      </div>
+
+      <BaseDialog :open="filtersOpen" title="Filtros" @close="filtersOpen = false">
+        <div class="flex flex-col gap-4">
+          <label class="flex flex-col">
+            <span class="label">Tipo de movimiento</span>
+            <select v-model="filters.kind" class="input min-h-11">
+              <option v-for="(kind, key) in KINDS" :key="key" :value="key">{{ kind.label }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col">
+            <span class="label">Producto</span>
+            <select v-model="filters.productId" class="input min-h-11">
+              <option value="">Todos los productos</option>
+              <option v-for="p in lookups.products" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col">
+            <span class="label">Persona</span>
+            <select v-model="filters.performedBy" class="input min-h-11">
+              <option value="">Todas las personas</option>
+              <option v-for="u in lookups.users" :key="u.id" :value="u.id">{{ fullName(u) }}</option>
+            </select>
+          </label>
+          <label class="flex flex-col">
+            <span class="label">Fechas</span>
+            <select v-model="range" class="input min-h-11">
+              <option v-if="presets.period" value="period">{{ periodLabel }}</option>
+              <option value="today">Hoy</option>
+              <option value="7d">Últimos 7 días</option>
+              <option value="30d">Últimos 30 días</option>
+              <option value="all">Todo</option>
+              <option value="custom">Elegir fechas…</option>
+            </select>
+          </label>
+          <div v-if="range === 'custom'" class="grid grid-cols-2 gap-2">
+            <label class="flex min-w-0 flex-col">
+              <span class="label">Desde</span>
+              <input
+                v-model="filters.from"
+                type="date"
+                class="input min-h-11"
+                :max="filters.to || undefined"
+              />
+            </label>
+            <label class="flex min-w-0 flex-col">
+              <span class="label">Hasta</span>
+              <input
+                v-model="filters.to"
+                type="date"
+                class="input min-h-11"
+                :min="filters.from || undefined"
+              />
+            </label>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              class="btn-secondary min-h-11"
+              :disabled="!hasFilters"
+              @click="clearFilters"
+            >
+              Limpiar
+            </button>
+            <button type="button" class="btn-primary min-h-11" @click="filtersOpen = false">
+              Ver {{ data ? formatNumber(data.total) : '' }} movimientos
+            </button>
+          </div>
+        </div>
+      </BaseDialog>
     </section>
   </AdminPage>
 </template>
-
-<style scoped>
-/* Celular y tablet en vertical: cada movimiento es una fila apilada (sin tabla ancha ni scroll lateral). */
-@media (max-width: 767px) {
-  .mv-table,
-  .mv-table tbody {
-    display: block;
-  }
-  .mv-table tr[data-day] {
-    display: block;
-  }
-  .mv-table tr[data-day] th {
-    display: block;
-  }
-  .mv-table tr[data-movement] {
-    display: grid;
-    grid-template-columns: 5.75rem minmax(0, 1fr) auto;
-    grid-template-areas:
-      'type product qty'
-      'time who stock';
-    align-items: center;
-    column-gap: 0.75rem;
-    row-gap: 0.25rem;
-    padding: 0.75rem 1rem;
-  }
-  .mv-table tr[data-movement] td {
-    padding: 0;
-  }
-  .mv-type {
-    grid-area: type;
-  }
-  .mv-product {
-    grid-area: product;
-  }
-  .mv-qty {
-    grid-area: qty;
-  }
-  .mv-time {
-    grid-area: time;
-    font-size: 13px;
-  }
-  .mv-who {
-    grid-area: who;
-    font-size: 14px;
-  }
-  .mv-stock {
-    grid-area: stock;
-    font-size: 13px;
-  }
-}
-</style>

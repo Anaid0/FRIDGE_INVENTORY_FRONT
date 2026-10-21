@@ -7,7 +7,6 @@ import {
   bearer,
   loginAdmin,
   openPairedTablet,
-  openTab,
   resetDatabase,
 } from './fixtures';
 
@@ -57,13 +56,13 @@ test('el más hambriento de la quincena: se calcula al terminarla y se ve en el 
   await expect(view.getByRole('button', { name: 'Volver a calcular' })).toBeVisible();
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/r01-admin-ranking.png`, fullPage: true });
 
-  // La tablet muestra el último calculado en la pestaña Ranking.
+  // La máquina muestra el último calculado en su Ranking.
   const { token: kioskToken } = await apiPairTablet(request, token);
   const tablet = await browser.newPage({ viewport: { width: 1280, height: 800 }, hasTouch: true });
   await openPairedTablet(tablet, kioskToken);
-  await openTab(tablet, 'Ranking');
+  await activeView(tablet).getByRole('link', { name: /Ver ranking/ }).click();
   const kiosk = activeView(tablet);
-  await expect(kiosk.getByText(/Calculado el .* por Admin FridgeYA/)).toBeVisible();
+  await expect(kiosk.getByText('El más hambriento', { exact: true })).toBeVisible();
   await expect(
     kiosk.getByRole('list', { name: 'Podio de la quincena' }).getByRole('listitem').first(),
   ).toContainText('Ana');

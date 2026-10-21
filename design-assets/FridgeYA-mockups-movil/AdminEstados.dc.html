@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FridgeYA · Estados y mensajes</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&amp;family=Nunito+Sans:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6AAB}a:hover{color:#073B5E}
+@keyframes fy-shim{0%{background-position:-200px 0}100%{background-position:200px 0}}
+@keyframes fy-spin{to{transform:rotate(360deg)}}
+.fy-sk{background:linear-gradient(90deg,rgba(7,59,94,0.06) 0%,rgba(7,59,94,0.13) 50%,rgba(7,59,94,0.06) 100%);background-size:400px 100%;animation:fy-shim 1.4s linear infinite}
+.fy-spin{animation:fy-spin .9s linear infinite}
+@media (prefers-reduced-motion: reduce){.fy-sk,.fy-spin{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 1000px; box-sizing: border-box; overflow: hidden; background: linear-gradient(165deg, #EAF5FD 0%, #D4E9F8 55%, #EEF4F9 100%); font-family: 'Nunito Sans', system-ui, sans-serif; color: #1E3A50; font-size: 13px">
+<div aria-hidden="true" style="position: absolute; width: 300px; height: 300px; left: -110px; top: -90px; border-radius: 50%; background: #7FC3EE; opacity: 0.55; filter: blur(60px)"></div>
+<div aria-hidden="true" style="position: absolute; width: 260px; height: 260px; right: -110px; top: 500px; border-radius: 50%; background: #FFC08A; opacity: 0.45; filter: blur(64px)"></div>
+
+<div style="position: relative; box-sizing: border-box; padding: 40px 14px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #4F6B80">AVISOS (TOAST)</span>
+<div role="status" style="min-height: 44px; padding: 8px 12px; box-sizing: border-box; border-radius: 14px; background: rgba(255,255,255,0.86); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 8px 22px rgba(7,59,94,0.12); display: flex; align-items: center; gap: 10px"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: #157A4B; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span><span style="flex-grow: 1">Compra registrada · 14 unidades entraron a la nevera</span></div>
+<div role="status" style="min-height: 44px; padding: 8px 12px; box-sizing: border-box; border-radius: 14px; background: rgba(255,247,238,0.92); border: 1px solid #FFCF9E; display: flex; align-items: center; gap: 10px"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: #FF8A1F; color: #073B5E; display: flex; align-items: center; justify-content: center; font-weight: 900">!</span><span style="flex-grow: 1">Agua llegó a su mínimo (1 de 3)</span><a href="Productos.dc.html" style="font-size: 12px; font-weight: 800">Ingresar</a></div>
+<div role="alert" style="min-height: 44px; padding: 8px 12px; box-sizing: border-box; border-radius: 14px; background: rgba(255,240,238,0.95); border: 1px solid #F4C7C3; display: flex; align-items: center; gap: 10px"><span style="width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; background: #B42318; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></span><span style="flex-grow: 1">No se pudo guardar. Revisa la conexión e inténtalo de nuevo.</span></div>
+
+<span style="margin-top: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #4F6B80">SIN CONEXIÓN</span>
+<div role="alert" style="min-height: 40px; padding: 6px 12px; box-sizing: border-box; border-radius: 12px; background: #073B5E; color: #FFFFFF; display: flex; align-items: center; gap: 8px; font-size: 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB46B" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01M3 3l18 18"></path></svg><span style="flex-grow: 1">Sin conexión con el servidor · reintentando…</span><button type="button" style="height: 30px; padding: 0 10px; border-radius: 8px; border: 0; background: rgba(255,255,255,0.14); color: #FFFFFF; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer">Reintentar</button></div>
+
+<span style="margin-top: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #4F6B80">CONFIRMACIÓN DE ACCIÓN SENSIBLE</span>
+<div role="dialog" aria-modal="true" aria-labelledby="fy-dlg" style="padding: 14px; border-radius: 20px; background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 18px 40px rgba(7,59,94,0.22); display: flex; flex-direction: column; gap: 8px">
+<h2 id="fy-dlg" style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 900; color: #073B5E">¿Anular la compra del 19 oct?</h2>
+<p style="margin: 0; font-size: 12px; color: #2C4A60">Se descuentan de la nevera 12 Coca cola 250ml, 6 Leche Semidescremada y 2 Agua, y vuelven $56.500 al saldo. No se puede deshacer.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" style="height: 42px; border-radius: 12px; border: 1px solid #C9DCEA; background: #FFFFFF; color: #073B5E; font: inherit; font-weight: 800; cursor: pointer">Cancelar</button><button type="button" style="height: 42px; border-radius: 12px; border: 0; background: #B42318; color: #FFFFFF; font: inherit; font-weight: 800; cursor: pointer">Anular compra</button></div>
+</div>
+
+<span style="margin-top: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #4F6B80">ENVIANDO (EVITA DOBLE ENVÍO)</span>
+<button type="button" disabled="" aria-busy="true" style="height: 46px; border-radius: 14px; border: 0; background: #0B79C3; color: #FFFFFF; font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: default; opacity: 0.85"><svg class="fy-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>Guardando…</button>
+
+<span style="margin-top: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #4F6B80">CARGANDO</span>
+<div aria-busy="true" aria-label="Cargando movimientos" style="padding: 10px 12px; border-radius: 18px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.9); display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px"><span class="fy-sk" style="width: 26px; height: 26px; border-radius: 8px"></span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 5px"><span class="fy-sk" style="width: 60%; height: 10px; border-radius: 5px"></span><span class="fy-sk" style="width: 40%; height: 8px; border-radius: 4px"></span></span><span class="fy-sk" style="width: 24px; height: 10px; border-radius: 5px"></span></div>
+<div style="display: flex; align-items: center; gap: 10px"><span class="fy-sk" style="width: 26px; height: 26px; border-radius: 8px"></span><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 5px"><span class="fy-sk" style="width: 70%; height: 10px; border-radius: 5px"></span><span class="fy-sk" style="width: 35%; height: 8px; border-radius: 4px"></span></span><span class="fy-sk" style="width: 24px; height: 10px; border-radius: 5px"></span></div>
+</div>
+
+<span style="margin-top: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #4F6B80">SIN RESULTADOS</span>
+<div style="padding: 14px; border-radius: 18px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.9); display: flex; align-items: center; gap: 12px">
+<svg width="64" height="56" viewBox="0 0 200 175" aria-hidden="true" style="flex-shrink: 0"><circle cx="28" cy="100" r="24" fill="#0b79c3"></circle><circle cx="28" cy="100" r="11" fill="#ffffff"></circle><circle cx="172" cy="100" r="24" fill="#0b79c3"></circle><circle cx="172" cy="100" r="11" fill="#ffffff"></circle><circle cx="100" cy="100" r="74" fill="#0b79c3"></circle><circle cx="78" cy="90" r="28" fill="#ffffff"></circle><circle cx="122" cy="90" r="28" fill="#ffffff"></circle><ellipse cx="100" cy="128" rx="40" ry="32" fill="#ffffff"></ellipse><circle cx="84" cy="96" r="9" fill="#073b5e"></circle><circle cx="128" cy="96" r="9" fill="#073b5e"></circle><path d="M88 136 Q100 130 112 136" stroke="#0b79c3" stroke-width="6" fill="none" stroke-linecap="round"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900; color: #073B5E">Nada por aquí</span><span style="font-size: 12px; color: #4F6B80">No hay movimientos con estos filtros. Prueba con otro periodo.</span><button type="button" style="align-self: flex-start; margin-top: 4px; height: 32px; padding: 0 10px; border-radius: 9px; border: 0; background: rgba(7,59,94,0.08); color: #073B5E; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer">Quitar filtros</button></span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

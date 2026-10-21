@@ -148,7 +148,7 @@ const tooltipLeft = computed(() => {
             :x2="width - PAD.right"
             :y1="yOf(tick)"
             :y2="yOf(tick)"
-            stroke="var(--color-ink-100)"
+            stroke="rgb(7 59 94 / 0.08)"
             stroke-width="1"
           />
           <text
@@ -156,7 +156,7 @@ const tooltipLeft = computed(() => {
             :y="yOf(tick)"
             text-anchor="end"
             dominant-baseline="middle"
-            class="fill-ink-500 text-[11px] tabular-nums"
+            class="fill-ink-500 font-mono text-[10px] tabular-nums"
           >
             {{ formatTick(tick) }}
           </text>
@@ -217,7 +217,7 @@ const tooltipLeft = computed(() => {
         :x="Math.min(last.x, width - PAD.right)"
         :y="last.y - 12"
         text-anchor="end"
-        class="fill-ink-800 text-xs font-semibold tabular-nums"
+        class="fill-ink-900 font-mono text-xs font-extrabold tabular-nums"
       >
         {{ formatValue(last.point.value) }}
       </text>
@@ -229,7 +229,7 @@ const tooltipLeft = computed(() => {
       :style="{ left: tooltipLeft }"
       role="tooltip"
     >
-      <p class="text-sm font-semibold text-ink-900 tabular-nums">{{ formatValue(active.point.value) }}</p>
+      <p class="num text-sm text-ink-900">{{ formatValue(active.point.value) }}</p>
       <p class="text-ink-500">
         {{ formatDate(active.point.date)
         }}<span v-if="active.point.detail"> · {{ active.point.detail }}</span>

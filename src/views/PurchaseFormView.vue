@@ -5,9 +5,7 @@ import { computed, reactive, ref } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import ErrorState from '@/components/ui/ErrorState.vue';
-import FormField from '@/components/ui/FormField.vue';
 import Icon from '@/components/ui/Icon.vue';
-import PageHeader from '@/components/ui/PageHeader.vue';
 import type { PeriodSummary } from '@/domain/models';
 import { useServices } from '@/services/container';
 import { ApiError, errorMessage } from '@/services/errors';
@@ -15,7 +13,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useLookupsStore } from '@/stores/lookups';
 import { useToastStore } from '@/stores/toasts';
 import { dateInputToISO, toLocalDateInput } from '@/utils/dates';
-import { formatMoney, fullName, parseMoneyInput, toCents } from '@/utils/format';
+import { formatMoney, formatNumber, fullName, parseMoneyInput, toCents } from '@/utils/format';
 
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const RECEIPT_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -36,6 +34,8 @@ interface Line {
   packagePrice: string;
   /** Total pagado por la línea (por paquete). Vacío: paquetes × precio por paquete. */
   total: string;
+  /** Ya se salió de algún campo de la línea: desde ahí se muestran sus errores (antes de enviar). */
+  touched: boolean;
 }
 
 const { funding, purchases } = useServices();
@@ -60,6 +60,7 @@ const newLine = (): Line => ({
   unitsPerPackage: 6,
   packagePrice: '',
   total: '',
+  touched: false,
 });
 
 const form = reactive({
@@ -116,7 +117,15 @@ async function load() {
 }
 useOnEnter(load);
 
-const activeProducts = computed(() => lookups.products.filter((p) => p.isActive));
+/** Productos activos, por código de la máquina ("21 · Coca cola 250ml"); los que no tienen código, al final. */
+const activeProducts = computed(() =>
+  lookups.products
+    .filter((p) => p.isActive)
+    .sort((a, b) => (a.code ?? '999').localeCompare(b.code ?? '999') || a.name.localeCompare(b.name)),
+);
+const productLabel = (p: { code: string | null; name: string }) =>
+  p.code ? `${p.code} · ${p.name}` : p.name;
+const selectedPeriod = computed(() => openPeriods.value.find((p) => p.periodId === form.periodId) ?? null);
 const productUnit = (id: string) => activeProducts.value.find((p) => p.id === id)?.unit ?? '';
 
 const isCount = (n: number) => Number.isInteger(n) && n >= 1;
@@ -150,27 +159,46 @@ function unitPriceCents(line: Line): number {
   return units ? Math.round(subtotalCents(line) / units) : 0;
 }
 
-function lineError(line: Line): string | null {
-  if (!line.productId) return 'Elige un producto';
-  if (form.lines.filter((l) => l.productId === line.productId).length > 1) return 'Producto repetido';
+type LineField = 'product' | 'quantity' | 'unitPrice' | 'packages' | 'total';
+
+/** Primer error de la línea y el campo al que corresponde (se marca en rojo). */
+function lineProblem(line: Line): { field: LineField; message: string } | null {
+  if (!line.productId) return { field: 'product', message: 'Elige un producto' };
+  if (form.lines.filter((l) => l.productId === line.productId).length > 1)
+    return { field: 'product', message: 'Producto repetido' };
   if (line.mode === 'unit') {
-    if (!isCount(line.quantity)) return 'Cantidad inválida';
-    if (!parseMoneyInput(line.unitPrice)) return 'Precio inválido';
+    if (!isCount(line.quantity)) return { field: 'quantity', message: 'Cantidad inválida' };
+    if (!line.unitPrice.trim())
+      return { field: 'unitPrice', message: 'Escribe cuánto pagaste por cada unidad' };
+    if (!parseMoneyInput(line.unitPrice)) return { field: 'unitPrice', message: 'Precio inválido' };
     return null;
   }
-  if (!isCount(line.packageCount) || !isCount(line.unitsPerPackage)) return 'Paquetes inválidos';
-  if (line.total.trim() && !parseMoneyInput(line.total)) return 'Total inválido';
-  if (!subtotalCents(line)) return 'Escribe el precio por paquete o el total pagado';
+  if (!isCount(line.packageCount) || !isCount(line.unitsPerPackage))
+    return { field: 'packages', message: 'Paquetes inválidos' };
+  if (line.total.trim() && !parseMoneyInput(line.total)) return { field: 'total', message: 'Total inválido' };
+  if (!subtotalCents(line))
+    return { field: 'total', message: 'Escribe el precio por paquete o el total pagado' };
   return null;
 }
+const lineError = (line: Line) => lineProblem(line)?.message ?? null;
+/** El error de la línea se ve después de tocarla o de intentar registrar. */
+const shownProblem = (line: Line) => (showErrors.value || line.touched ? lineProblem(line) : null);
+const invalid = (line: Line, field: LineField) => shownProblem(line)?.field === field;
 
 const totalCents = computed(() => form.lines.reduce((sum, line) => sum + subtotalCents(line), 0));
+const totalUnits = computed(() => form.lines.reduce((sum, line) => sum + unitsOf(line), 0));
 const isValid = computed(
   () => form.periodId && form.buyerId && form.lines.length > 0 && form.lines.every((l) => !lineError(l)),
 );
 
 function removeLine(uid: number) {
   form.lines = form.lines.filter((line) => line.uid !== uid);
+}
+
+function clearReceipt() {
+  form.receipt = null;
+  receiptError.value = null;
+  formKey.value += 1;
 }
 
 function onReceipt(event: Event) {
@@ -225,21 +253,30 @@ async function submit() {
 </script>
 
 <template>
-  <AdminPage title="Registrar compra" narrow>
+  <AdminPage title="Nueva compra" narrow :with-tabs="false">
     <section>
-      <PageHeader
-        title="Registrar compra"
-        subtitle="Lo comprado con el fondo entra automáticamente a la nevera."
-      >
-        <template #eyebrow>
-          <RouterLink
-            to="/admin/compras"
-            class="mb-1.5 inline-flex items-center gap-1 text-sm font-extrabold text-brand-600 hover:text-brand-800"
-          >
-            <Icon name="chevronLeft" :size="14" /> Compras
-          </RouterLink>
-        </template>
-      </PageHeader>
+      <header class="mb-2.5 flex items-center gap-2">
+        <RouterLink
+          :to="form.periodId ? `/admin/quincenas/${form.periodId}` : '/admin/quincenas/actual'"
+          class="glass grid size-11 shrink-0 place-items-center rounded-full text-ink-900"
+          aria-label="Cancelar"
+        >
+          <Icon name="x" :size="18" :stroke="2.6" />
+        </RouterLink>
+        <div class="flex min-w-0 flex-1 flex-col">
+          <h1 class="font-display text-lg leading-tight font-black text-ink-900 lg:text-[22px]">
+            Nueva compra
+          </h1>
+          <p v-if="selectedPeriod" class="truncate text-[11px] text-ink-500 lg:text-xs">
+            {{ selectedPeriod.name }} · saldo
+            <strong
+              class="num"
+              :class="selectedPeriod.isOverspent ? 'text-danger-700' : 'text-success-700'"
+              >{{ formatMoney(selectedPeriod.balance) }}</strong
+            >
+          </p>
+        </div>
+      </header>
 
       <ErrorState v-if="loadError" :message="loadError" @retry="load" />
 
@@ -249,251 +286,386 @@ async function submit() {
           title="No hay una quincena abierta"
           message="Las compras se registran dentro de una quincena abierta."
         >
-          <RouterLink to="/admin/quincenas" class="btn-primary">Ir a quincenas</RouterLink>
+          <RouterLink to="/admin/quincenas/actual" class="btn-primary min-h-11">Ir a la quincena</RouterLink>
         </EmptyState>
       </div>
 
-      <form v-else-if="ready" class="space-y-6" novalidate @submit.prevent="submit">
-        <p v-if="error" class="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700" role="alert">
+      <form v-else-if="ready" class="flex flex-col gap-2.5" novalidate @submit.prevent="submit">
+        <p
+          v-if="error"
+          class="rounded-xl bg-danger-50 px-3 py-2 text-xs font-bold text-danger-700"
+          role="alert"
+        >
           {{ error }}
         </p>
 
-        <div class="card grid gap-5 p-6 sm:grid-cols-2">
-          <FormField id="pf-period" label="Quincena">
-            <select id="pf-period" v-model="form.periodId" class="input">
+        <!-- Datos de la compra -->
+        <div class="card grid grid-cols-2 gap-2 p-2.5">
+          <label v-if="openPeriods.length > 1" class="field col-span-2">
+            Quincena
+            <select id="pf-period" v-model="form.periodId" class="control font-bold">
               <option v-for="p in openPeriods" :key="p.periodId" :value="p.periodId">
                 {{ p.name }} · saldo {{ formatMoney(p.balance) }}
               </option>
             </select>
-          </FormField>
-          <FormField id="pf-buyer" label="¿Quién compró?">
-            <select id="pf-buyer" v-model="form.buyerId" class="input">
+          </label>
+          <label class="field col-span-2 sm:col-span-1">
+            ¿Quién compró?
+            <select id="pf-buyer" v-model="form.buyerId" class="control font-bold">
               <option v-for="u in lookups.users" :key="u.id" :value="u.id">{{ fullName(u) }}</option>
             </select>
-          </FormField>
-          <FormField id="pf-store" label="Tienda" optional>
+          </label>
+          <label class="field col-span-1">
+            Fecha de la compra
+            <input id="pf-date" v-model="form.date" type="date" class="control" :max="toLocalDateInput()" />
+          </label>
+          <label class="field col-span-1">
+            <span>Tienda <span class="font-semibold text-ink-500">(opcional)</span></span>
             <input
               id="pf-store"
               v-model="form.store"
               type="text"
               maxlength="120"
-              class="input"
+              class="control"
               placeholder="Ej.: Éxito"
             />
-          </FormField>
-          <FormField id="pf-date" label="Fecha de la compra">
-            <input id="pf-date" v-model="form.date" type="date" class="input" :max="toLocalDateInput()" />
-          </FormField>
+          </label>
+          <label class="field col-span-2 sm:col-span-1">
+            <span>Nota <span class="font-semibold text-ink-500">(opcional)</span></span>
+            <input id="pf-note" v-model="form.note" type="text" maxlength="255" class="control" />
+          </label>
         </div>
 
-        <div class="card overflow-hidden">
-          <div class="flex items-center justify-between border-b border-ink-200/70 px-5 py-4">
-            <h2 class="text-[19px] font-black text-ink-900">Productos comprados</h2>
-            <button type="button" class="btn-secondary px-3 py-1.5" @click="form.lines.push(newLine())">
-              <Icon name="plus" :size="16" /> Agregar producto
-            </button>
-          </div>
-          <div class="divide-y divide-ink-200/60">
-            <div v-for="(line, index) in form.lines" :key="line.uid" class="flex flex-col gap-3 px-5 py-4">
-              <div class="flex flex-wrap items-start gap-3">
-                <div class="min-w-0 flex-[1_1_220px]">
-                  <label :for="`pl-product-${line.uid}`" class="sr-only">Producto {{ index + 1 }}</label>
-                  <select
-                    :id="`pl-product-${line.uid}`"
-                    v-model="line.productId"
-                    class="input"
-                    :aria-invalid="showErrors && Boolean(lineError(line))"
-                  >
-                    <option value="" disabled>Elige un producto</option>
-                    <option v-for="p in activeProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
-                  </select>
-                  <p v-if="showErrors && lineError(line)" class="mt-1 text-xs text-danger-700">
-                    {{ lineError(line) }}
-                  </p>
-                </div>
-                <div class="segmented" role="group" :aria-label="`Cómo se compró el producto ${index + 1}`">
-                  <button
-                    type="button"
-                    class="segmented-option"
-                    :aria-pressed="line.mode === 'unit'"
-                    @click="line.mode = 'unit'"
-                  >
-                    Por unidad
-                  </button>
-                  <button
-                    type="button"
-                    class="segmented-option"
-                    :aria-pressed="line.mode === 'package'"
-                    @click="line.mode = 'package'"
-                  >
-                    Por paquete
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  class="rounded-md p-2.5 text-ink-400 hover:bg-white/70 hover:text-danger-700 disabled:opacity-30"
-                  :disabled="form.lines.length === 1"
-                  :aria-label="`Quitar producto ${index + 1}`"
-                  @click="removeLine(line.uid)"
-                >
-                  <Icon name="x" :size="16" />
-                </button>
-              </div>
-
-              <!-- Por unidad: cantidad × precio -->
-              <div
-                v-if="line.mode === 'unit'"
-                class="grid grid-cols-2 items-end gap-3 sm:grid-cols-[8rem_10rem_1fr]"
+        <!-- Una tarjeta por producto -->
+        <section
+          v-for="(line, index) in form.lines"
+          :key="line.uid"
+          class="card flex flex-col gap-2 bg-white/66! p-2.5"
+          :aria-label="`Línea ${index + 1}`"
+          @focusout="line.touched = true"
+        >
+          <div class="flex gap-1.5">
+            <label :for="`pl-product-${line.uid}`" class="sr-only">Producto {{ index + 1 }}</label>
+            <select
+              :id="`pl-product-${line.uid}`"
+              v-model="line.productId"
+              class="control h-11 min-w-0 flex-1 font-extrabold"
+              :aria-invalid="invalid(line, 'product')"
+            >
+              <option value="" disabled>Elige un producto</option>
+              <option v-for="p in activeProducts" :key="p.id" :value="p.id">{{ productLabel(p) }}</option>
+            </select>
+            <div
+              class="flex h-11 shrink-0 gap-0.5 rounded-[10px] bg-ink-900/7 p-[3px]"
+              role="group"
+              :aria-label="`Cómo se compró el producto ${index + 1}`"
+            >
+              <button
+                type="button"
+                class="mode"
+                :aria-pressed="line.mode === 'unit'"
+                @click="line.mode = 'unit'"
               >
-                <div>
-                  <label :for="`pl-qty-${line.uid}`" class="text-xs font-bold text-ink-500">Cantidad</label>
-                  <div class="flex items-center gap-1.5">
-                    <input
-                      :id="`pl-qty-${line.uid}`"
-                      v-model.number="line.quantity"
-                      type="number"
-                      min="1"
-                      step="1"
-                      class="input tabular-nums"
-                    />
-                    <span class="text-xs text-ink-500">{{ productUnit(line.productId) }}</span>
-                  </div>
-                </div>
-                <div>
-                  <label :for="`pl-price-${line.uid}`" class="text-xs font-bold text-ink-500"
-                    >Precio unitario</label
-                  >
-                  <input
-                    :id="`pl-price-${line.uid}`"
-                    v-model="line.unitPrice"
-                    type="text"
-                    inputmode="decimal"
-                    class="input tabular-nums"
-                    placeholder="Ej.: 2500"
-                  />
-                </div>
-                <p
-                  class="col-span-2 pb-2.5 text-right font-extrabold text-ink-900 tabular-nums sm:col-span-1"
-                >
-                  {{ formatMoney(subtotalCents(line) / 100) }}
-                </p>
-              </div>
-
-              <!-- Por paquete: paquetes × unidades, precio por paquete o total pagado -->
-              <div v-else class="flex flex-col gap-2">
-                <div class="grid grid-cols-2 items-end gap-3 sm:grid-cols-4">
-                  <div>
-                    <label :for="`pl-packs-${line.uid}`" class="text-xs font-bold text-ink-500"
-                      >Paquetes</label
-                    >
-                    <input
-                      :id="`pl-packs-${line.uid}`"
-                      v-model.number="line.packageCount"
-                      type="number"
-                      min="1"
-                      step="1"
-                      class="input tabular-nums"
-                    />
-                  </div>
-                  <div>
-                    <label :for="`pl-per-${line.uid}`" class="text-xs font-bold text-ink-500"
-                      >Unidades por paquete</label
-                    >
-                    <input
-                      :id="`pl-per-${line.uid}`"
-                      v-model.number="line.unitsPerPackage"
-                      type="number"
-                      min="1"
-                      step="1"
-                      class="input tabular-nums"
-                    />
-                  </div>
-                  <div>
-                    <label :for="`pl-pack-price-${line.uid}`" class="text-xs font-bold text-ink-500"
-                      >Precio por paquete</label
-                    >
-                    <input
-                      :id="`pl-pack-price-${line.uid}`"
-                      v-model="line.packagePrice"
-                      type="text"
-                      inputmode="decimal"
-                      class="input tabular-nums"
-                      placeholder="Ej.: 13800"
-                    />
-                  </div>
-                  <div>
-                    <label :for="`pl-total-${line.uid}`" class="text-xs font-bold text-ink-500"
-                      >Total pagado</label
-                    >
-                    <input
-                      :id="`pl-total-${line.uid}`"
-                      v-model="line.total"
-                      type="text"
-                      inputmode="decimal"
-                      class="input tabular-nums"
-                      :placeholder="
-                        packagesCents(line) ? String(packagesCents(line) / 100) : 'Si hubo descuento'
-                      "
-                      :aria-describedby="`pl-calc-${line.uid}`"
-                    />
-                  </div>
-                </div>
-                <p
-                  :id="`pl-calc-${line.uid}`"
-                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-xl bg-brand-50/90 px-3.5 py-2 text-sm text-ink-700"
-                  aria-live="polite"
-                >
-                  <span>
-                    <strong class="text-ink-900 tabular-nums">{{ unitsOf(line) }}</strong>
-                    {{ unitsOf(line) === 1 ? 'unidad' : 'unidades' }} ·
-                    <strong class="text-ink-900 tabular-nums">{{
-                      formatMoney(unitPriceCents(line) / 100)
-                    }}</strong>
-                    c/u
-                    <span class="text-ink-500">(lo que se cobra a quien lo saque)</span>
-                  </span>
-                  <strong class="text-ink-900 tabular-nums">{{
-                    formatMoney(subtotalCents(line) / 100)
-                  }}</strong>
-                </p>
-              </div>
+                Unidad
+              </button>
+              <button
+                type="button"
+                class="mode"
+                :aria-pressed="line.mode === 'package'"
+                @click="line.mode = 'package'"
+              >
+                Paquete
+              </button>
             </div>
           </div>
-          <div class="flex items-center justify-between glass-inset px-5 py-4">
-            <span class="text-sm text-ink-600">Total</span>
-            <span class="text-3xl font-black text-ink-900">{{ formatMoney(totalCents / 100) }}</span>
+
+          <!-- Por unidad: cantidad × precio -->
+          <div v-if="line.mode === 'unit'" class="grid grid-cols-2 gap-1.5">
+            <label class="field" :class="{ 'text-danger-700!': invalid(line, 'quantity') }">
+              <span
+                >Cantidad<span v-if="productUnit(line.productId)" class="font-semibold text-ink-500">
+                  · {{ productUnit(line.productId) }}</span
+                ></span
+              >
+              <input
+                :id="`pl-qty-${line.uid}`"
+                v-model.number="line.quantity"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                class="control num text-sm"
+                :aria-invalid="invalid(line, 'quantity')"
+              />
+            </label>
+            <label class="field" :class="{ 'text-danger-700!': invalid(line, 'unitPrice') }">
+              <span aria-hidden="true">Precio c/u</span>
+              <input
+                :id="`pl-price-${line.uid}`"
+                v-model="line.unitPrice"
+                type="text"
+                inputmode="decimal"
+                class="control num text-sm"
+                placeholder="$0"
+                aria-label="Precio unitario"
+                :aria-invalid="invalid(line, 'unitPrice')"
+                :aria-describedby="shownProblem(line) ? `pl-error-${line.uid}` : undefined"
+              />
+            </label>
+          </div>
+
+          <!-- Por paquete: paquetes × unidades, precio por paquete o total pagado -->
+          <div v-else class="grid grid-cols-2 gap-1.5 min-[380px]:grid-cols-4">
+            <label class="field" :class="{ 'text-danger-700!': invalid(line, 'packages') }">
+              Paquetes
+              <input
+                :id="`pl-packs-${line.uid}`"
+                v-model.number="line.packageCount"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                class="control num text-sm"
+                :aria-invalid="invalid(line, 'packages')"
+              />
+            </label>
+            <label class="field" :class="{ 'text-danger-700!': invalid(line, 'packages') }">
+              <span aria-hidden="true">Und. × paquete</span>
+              <input
+                :id="`pl-per-${line.uid}`"
+                v-model.number="line.unitsPerPackage"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                class="control num text-sm"
+                aria-label="Unidades por paquete"
+                :aria-invalid="invalid(line, 'packages')"
+              />
+            </label>
+            <label class="field">
+              <span aria-hidden="true">$ × paquete</span>
+              <input
+                :id="`pl-pack-price-${line.uid}`"
+                v-model="line.packagePrice"
+                type="text"
+                inputmode="decimal"
+                class="control num text-sm"
+                placeholder="$0"
+                aria-label="Precio por paquete"
+              />
+            </label>
+            <label class="field" :class="{ 'text-danger-700!': invalid(line, 'total') }">
+              <span aria-hidden="true">Pagado</span>
+              <input
+                :id="`pl-total-${line.uid}`"
+                v-model="line.total"
+                type="text"
+                inputmode="decimal"
+                class="control num text-sm"
+                :placeholder="packagesCents(line) ? formatMoney(packagesCents(line) / 100) : '$0'"
+                aria-label="Total pagado"
+                :aria-invalid="invalid(line, 'total')"
+                :aria-describedby="`pl-calc-${line.uid}`"
+              />
+            </label>
+          </div>
+
+          <p
+            v-if="shownProblem(line)"
+            :id="`pl-error-${line.uid}`"
+            class="text-[11px] font-extrabold text-danger-700"
+          >
+            {{ shownProblem(line)!.message }}
+          </p>
+          <div class="flex items-center justify-between gap-2">
+            <p
+              v-if="line.mode === 'package'"
+              :id="`pl-calc-${line.uid}`"
+              class="flex min-w-0 flex-1 flex-wrap justify-between gap-x-3 text-[11px] font-extrabold text-success-700"
+              aria-live="polite"
+            >
+              <span>Entran {{ unitsOf(line) }} {{ unitsOf(line) === 1 ? 'unidad' : 'unidades' }}</span>
+              <span class="num">{{ formatMoney(unitPriceCents(line) / 100) }} c/u</span>
+            </p>
+            <p v-else class="min-w-0 flex-1 text-[11px] font-extrabold text-success-700">
+              <template v-if="subtotalCents(line)">
+                Subtotal <span class="num">{{ formatMoney(subtotalCents(line) / 100) }}</span>
+              </template>
+            </p>
+            <button
+              v-if="form.lines.length > 1"
+              type="button"
+              class="-my-2 inline-flex min-h-11 shrink-0 items-center gap-1 px-1 text-[11px] font-extrabold text-ink-500 hover:text-danger-700"
+              :aria-label="`Quitar producto ${index + 1}`"
+              @click="removeLine(line.uid)"
+            >
+              <Icon name="x" :size="14" :stroke="2.4" /> Quitar
+            </button>
+          </div>
+        </section>
+
+        <button
+          type="button"
+          class="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#9DB6C9] bg-white/40 text-xs font-extrabold text-brand-700 hover:bg-white/60"
+          @click="form.lines.push(newLine())"
+        >
+          <Icon name="plus" :size="14" :stroke="2.8" /> Agregar producto
+        </button>
+
+        <!-- Comprobante (opcional): foto con la cámara o archivo -->
+        <section class="card flex flex-col gap-1.5 bg-white/55! p-2.5">
+          <span class="flex justify-between text-[11px] font-extrabold text-ink-700">
+            <span>Comprobante</span><span class="font-bold text-ink-500">Opcional</span>
+          </span>
+          <div :key="formKey" class="grid grid-cols-2 gap-1.5">
+            <label class="receipt-btn">
+              <Icon name="camera" :size="16" :stroke="2.2" /> Tomar foto
+              <input type="file" accept="image/*" capture="environment" class="sr-only" @change="onReceipt" />
+            </label>
+            <label class="receipt-btn">
+              <Icon name="upload" :size="16" :stroke="2.2" /> Subir archivo
+              <input
+                id="pf-receipt"
+                type="file"
+                accept="image/jpeg,image/png,application/pdf"
+                class="sr-only"
+                aria-label="Comprobante"
+                @change="onReceipt"
+              />
+            </label>
+          </div>
+          <p v-if="receiptError" class="text-[11px] font-extrabold text-danger-700" role="alert">
+            {{ receiptError }}
+          </p>
+          <p v-else-if="form.receipt" class="flex items-center gap-2 text-[11px] text-ink-700">
+            <Icon name="receipt" :size="14" class="shrink-0 text-success-700" />
+            <span class="min-w-0 flex-1 truncate font-bold">{{ form.receipt.name }}</span>
+            <button
+              type="button"
+              class="-my-2 min-h-11 shrink-0 px-1 font-extrabold text-ink-500 hover:text-danger-700"
+              @click="clearReceipt"
+            >
+              Quitar
+            </button>
+          </p>
+          <p v-else class="text-[10px] text-ink-500">Foto o PDF del recibo, hasta 5 MB.</p>
+        </section>
+        <p class="text-center text-[11px] text-ink-500">
+          Al registrarla, sus productos entran solos a la nevera.
+        </p>
+
+        <!-- Espacio para que la barra fija no tape lo último -->
+        <div class="h-24" aria-hidden="true" />
+
+        <!-- Barra fija: total y registrar (esta página no lleva la barra de pestañas) -->
+        <div
+          class="buy-bar fixed inset-x-0 bottom-0 z-30 border-t border-white/95 bg-white/75 backdrop-blur-xl"
+        >
+          <div class="mx-auto flex max-w-2xl items-center gap-2.5 px-3.5 pt-2.5 sm:px-6">
+            <span class="flex shrink-0 flex-col">
+              <span class="text-[10px] text-ink-500">Total · {{ formatNumber(totalUnits) }} und.</span>
+              <span class="num text-lg text-ink-900">{{ formatMoney(totalCents / 100) }}</span>
+            </span>
+            <button
+              type="submit"
+              class="btn-primary h-[46px] flex-1 rounded-[14px] font-display text-[15px] font-black"
+              :disabled="saving || !isValid || Boolean(receiptError)"
+            >
+              <span
+                v-if="saving"
+                class="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                aria-hidden="true"
+              />
+              {{ saving ? 'Registrando…' : 'Registrar compra' }}
+            </button>
           </div>
         </div>
-
-        <div class="card grid gap-5 p-6 sm:grid-cols-2">
-          <FormField
-            id="pf-receipt"
-            label="Comprobante"
-            optional
-            hint="Foto o PDF del recibo, hasta 5 MB."
-            :error="receiptError ?? undefined"
-          >
-            <input
-              id="pf-receipt"
-              :key="formKey"
-              type="file"
-              accept="image/jpeg,image/png,application/pdf"
-              class="block w-full text-sm text-ink-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-800 hover:file:bg-brand-100"
-              @change="onReceipt"
-            />
-          </FormField>
-          <FormField id="pf-note" label="Nota" optional>
-            <input id="pf-note" v-model="form.note" type="text" maxlength="255" class="input" />
-          </FormField>
-        </div>
-
-        <div class="flex justify-end gap-2">
-          <RouterLink to="/admin/compras" class="btn-secondary">Cancelar</RouterLink>
-          <button type="submit" class="btn-primary" :disabled="saving">
-            {{ saving ? 'Registrando…' : `Registrar compra · ${formatMoney(totalCents / 100)}` }}
-          </button>
-        </div>
       </form>
+
+      <div v-else class="flex flex-col gap-2.5" aria-busy="true">
+        <div class="h-[120px] animate-pulse rounded-[18px] bg-white/50" />
+        <div class="h-[120px] animate-pulse rounded-[18px] bg-white/50" />
+      </div>
     </section>
   </AdminPage>
 </template>
+
+<style scoped>
+/* Campo compacto del mockup: etiqueta pequeña (10px, 800) encima del control. */
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #2c4a60;
+}
+.control {
+  height: 2.75rem;
+  width: 100%;
+  min-width: 0;
+  border-radius: 10px;
+  border: 1px solid #c9dcea;
+  background: #fff;
+  padding: 0 0.625rem;
+  font-size: 13px;
+  color: #073b5e;
+}
+.control:focus {
+  outline: none;
+  border-color: #0b79c3;
+  box-shadow: 0 0 0 3px rgb(11 121 195 / 0.2);
+}
+.control[aria-invalid='true'] {
+  border: 1.5px solid #e05a4b;
+  background: #fff6f5;
+}
+/* Unidad / Paquete: la opción activa en blanco. */
+.mode {
+  border-radius: 8px;
+  padding: 0 0.6rem;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2c4a60;
+}
+.mode[aria-pressed='true'] {
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(7 59 94 / 0.14);
+  color: #073b5e;
+  font-weight: 900;
+}
+.receipt-btn {
+  display: flex;
+  height: 2.75rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 12px;
+  border: 1px solid #c9dcea;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  color: #073b5e;
+}
+.receipt-btn:hover {
+  background: #f1f8fd;
+}
+.receipt-btn:focus-within {
+  outline: 2px solid #1a88cf;
+  outline-offset: 2px;
+}
+.buy-bar {
+  padding-bottom: calc(var(--ion-safe-area-bottom, 0px) + 0.875rem);
+}
+@media (min-width: 1024px) {
+  .field {
+    font-size: 11px;
+  }
+  .mode {
+    font-size: 12px;
+  }
+}
+</style>

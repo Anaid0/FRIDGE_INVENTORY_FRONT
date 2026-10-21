@@ -90,14 +90,14 @@ async function submit() {
         </select>
       </FormField>
       <div class="grid gap-4 sm:grid-cols-2">
-        <FormField id="ct-amount" label="Monto" hint="Ej.: 50000" :error="fieldErrors.amount">
+        <FormField id="ct-amount" label="Monto" hint="Ej.: 20.000" :error="fieldErrors.amount">
           <input
             id="ct-amount"
             v-model="amount"
             type="text"
             inputmode="decimal"
-            class="input tabular-nums"
-            placeholder="50000"
+            class="input num text-base"
+            placeholder="$ 20.000"
             :aria-invalid="Boolean(fieldErrors.amount)"
           />
         </FormField>
@@ -115,11 +115,11 @@ async function submit() {
           placeholder="Ej.: transferencia"
         />
       </FormField>
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" class="btn-secondary" :disabled="saving" @click="emit('close')">
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="button" class="btn-secondary min-h-11" :disabled="saving" @click="emit('close')">
           Cancelar
         </button>
-        <button type="submit" class="btn-primary" :disabled="saving || !amount">
+        <button type="submit" class="btn-primary min-h-11" :disabled="saving || !amount">
           {{ saving ? 'Guardando…' : 'Registrar aporte' }}
         </button>
       </div>

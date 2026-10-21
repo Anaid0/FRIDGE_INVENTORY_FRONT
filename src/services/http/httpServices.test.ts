@@ -22,6 +22,15 @@ describe('createHttpServices', () => {
     expect(calls[0]?.params).toEqual({ lowStock: true });
   });
 
+  it('historial de la tablet: GET /movements paginado, con el tipo solo si se elige', async () => {
+    const { services, calls } = recordingServices();
+    await services.kiosk.movements({ page: 2, pageSize: 20, type: 'IN' });
+    await services.kiosk.movements({ page: 1, pageSize: 20, type: undefined });
+    expect(calls[0]?.url).toBe('/movements');
+    expect(calls[0]?.params).toEqual({ page: 2, pageSize: 20, type: 'IN' });
+    expect(calls[1]?.params).toEqual({ page: 1, pageSize: 20 });
+  });
+
   it('una compra sin comprobante se envía como JSON', async () => {
     const { services, calls } = recordingServices();
     const items = [{ productId: 'p1', quantity: 2, unitPrice: '2500' }];

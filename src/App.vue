@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import { IonApp, IonRouterOutlet } from '@ionic/vue';
 import { computed, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ToastHost from '@/components/ui/ToastHost.vue';
-import AdminMenu from '@/layouts/AdminMenu.vue';
+import AdminTabBar from '@/layouts/AdminTabBar.vue';
 import { useIdle } from '@/composables/useIdle';
 import { keepScreenOn } from '@/native/platform';
 import { useAuthStore } from '@/stores/auth';
@@ -16,8 +16,10 @@ const route = useRoute();
 const router = useRouter();
 const kiosk = useKioskStore();
 
-/** El menú lateral solo existe en la administración con sesión (la tablet usa pantalla completa). */
-const showMenu = computed(() => auth.isAuthenticated && route.meta.layout === 'admin');
+/** La barra de pestañas solo existe en la administración con sesión (la máquina usa pantalla completa). */
+const showTabs = computed(
+  () => auth.isAuthenticated && route.meta.layout === 'admin' && route.meta.tabs !== false,
+);
 
 // "Quién más retira" siempre al día: al entrar, cada minuto y tras cada movimiento (lo refrescan los diálogos).
 const REFRESH_MS = 60_000;
@@ -56,10 +58,10 @@ useIdle(
 
 <template>
   <IonApp>
-    <IonSplitPane content-id="main" when="lg" :disabled="!showMenu">
-      <AdminMenu v-if="showMenu" content-id="main" />
-      <IonRouterOutlet id="main" />
-    </IonSplitPane>
+    <IonRouterOutlet id="main" />
+    <!-- Detrás de la barra de estado de Android: lo que se desplaza no queda debajo de la hora y los íconos. -->
+    <div class="status-bar-scrim" aria-hidden="true" />
+    <AdminTabBar v-if="showTabs" />
     <ToastHost />
   </IonApp>
 </template>

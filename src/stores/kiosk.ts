@@ -126,8 +126,9 @@ export const useKioskStore = defineStore('kiosk', () => {
     return result;
   }
 
-  async function changePin(personId: string, currentPin: string, newPin: string): Promise<void> {
-    await kiosk.changePin(personId, currentPin, newPin);
+  /** Devuelve el nombre de la persona (su PIN actual la identificó). */
+  async function changePin(currentPin: string, newPin: string): Promise<string> {
+    return (await kiosk.changePin(currentPin, newPin)).name;
   }
 
   return {

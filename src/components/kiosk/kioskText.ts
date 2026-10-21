@@ -1,6 +1,12 @@
 import type { MovementType } from '@/domain/models';
 import { withUnit } from '@/utils/format';
 
+/**
+ * Celular en horizontal (poco alto): la lista de lo elegido pasa a ser una barra delgada para que los
+ * productos tengan casi toda la pantalla.
+ */
+export const COMPACT_CART_QUERY = '(orientation: landscape) and (max-height: 599px)';
+
 /** "a", "a y b", "a, b y c". */
 export function joinList(parts: string[]): string {
   return parts.length > 1

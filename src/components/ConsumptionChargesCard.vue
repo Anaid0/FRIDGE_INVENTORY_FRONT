@@ -10,7 +10,6 @@ import { useToastStore } from '@/stores/toasts';
 import { formatDateTime, formatMoney, formatNumber, fullName, toCents } from '@/utils/format';
 import ChargePaymentDialog from './ChargePaymentDialog.vue';
 import Avatar from './ui/Avatar.vue';
-import Badge from './ui/Badge.vue';
 import EmptyState from './ui/EmptyState.vue';
 import Icon from './ui/Icon.vue';
 
@@ -62,11 +61,11 @@ async function regenerate() {
 </script>
 
 <template>
-  <section class="card overflow-hidden" aria-labelledby="charges-title">
-    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-ink-200/70 px-[22px] py-4">
-      <div class="min-w-0">
-        <h2 id="charges-title" class="text-[19px] font-black text-ink-900">Cuánto aporta cada uno</h2>
-        <p class="mt-0.5 max-w-2xl text-[13px] text-ink-500">
+  <section class="card flex flex-col px-3 pt-1 pb-2 lg:px-4" aria-labelledby="charges-title">
+    <div class="flex flex-wrap items-start justify-between gap-2 py-2.5">
+      <div class="min-w-0 flex-[1_1_220px]">
+        <h2 id="charges-title" class="section-title">Cuánto aporta cada uno</h2>
+        <p class="mt-0.5 text-[11px] text-ink-500 lg:text-xs">
           <template v-if="generated">
             Quien más consume, más aporta: lo que cada uno sacó, al precio de compra. Se paga como aporte a la
             siguiente quincena.
@@ -78,21 +77,25 @@ async function regenerate() {
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <Badge v-if="data && !generated" tone="info">Estimado</Badge>
+        <span
+          v-if="data && !generated"
+          class="inline-flex h-[22px] items-center rounded-full bg-brand-100 px-2 text-[11px] font-extrabold text-brand-700"
+          >Estimado</span
+        >
         <button
           v-if="auth.isAdmin && data?.canGenerate"
           type="button"
-          class="btn-secondary min-h-11"
+          class="inline-flex min-h-11 items-center gap-1.5 rounded-[10px] border border-ink-300 bg-white/80 px-2.5 text-[11px] font-extrabold text-brand-700 hover:bg-white disabled:opacity-60"
           :disabled="regenerating"
           @click="regenerate"
         >
-          <Icon name="refresh" :size="16" />
+          <Icon name="refresh" :size="14" :stroke="2.2" />
           {{ regenerating ? 'Recalculando…' : generated ? 'Recalcular cobros' : 'Generar cobros' }}
         </button>
       </div>
     </div>
 
-    <p v-if="charges.error.value && !data" class="px-[22px] py-4 text-sm text-danger-700">
+    <p v-if="charges.error.value && !data" class="border-t border-ink-900/8 py-3 text-xs text-danger-700">
       {{ charges.error.value }}
     </p>
     <EmptyState
@@ -101,37 +104,39 @@ async function regenerate() {
       title="Nadie ha sacado nada en esta quincena"
     />
     <template v-else-if="data">
-      <ul class="divide-y divide-ink-200/60" aria-label="Aporte por persona">
+      <ul aria-label="Aporte por persona">
         <li
           v-for="c in data.charges"
           :key="c.user.id"
-          class="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1.5 px-[22px] py-3 sm:grid-cols-[auto_minmax(0,14rem)_1fr_auto]"
+          class="grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 border-t border-ink-900/8 py-2"
         >
-          <Avatar :person="c.user" size="sm" />
+          <Avatar :person="c.user" size="sm" class="size-[26px]! text-[10px]!" />
           <div class="min-w-0">
-            <p class="truncate font-bold text-ink-800">{{ fullName(c.user) }}</p>
-            <p class="text-xs text-ink-500">
+            <p class="truncate text-xs font-bold text-ink-800 lg:text-[13px]">{{ fullName(c.user) }}</p>
+            <p class="text-[10px] text-ink-500 lg:text-[11px]">
               {{ formatNumber(c.units) }} und.
               <span v-if="c.unpricedUnits" class="text-accent-700">
                 · {{ formatNumber(c.unpricedUnits) }} sin precio</span
               >
             </p>
           </div>
-          <span
-            class="col-span-3 row-start-2 h-2 overflow-hidden rounded-full bg-ink-100 sm:col-span-1 sm:row-start-auto"
-          >
-            <span class="block h-full rounded-full bg-accent-500" :style="{ width: width(c) }" />
-          </span>
           <div class="flex flex-col items-end gap-1">
-            <span class="font-black text-ink-900 tabular-nums">{{ formatMoney(c.amount) }}</span>
+            <span class="num text-xs text-ink-900 lg:text-[13px]">{{ formatMoney(c.amount) }}</span>
             <template v-if="generated">
-              <Badge v-if="isPaid(c)" tone="success"><Icon name="check" :size="12" /> Pagado</Badge>
-              <span v-else class="flex flex-wrap items-center justify-end gap-2">
-                <Badge tone="accent">Debe {{ formatMoney(c.pending) }}</Badge>
+              <span
+                v-if="isPaid(c)"
+                class="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-[10px] font-extrabold text-success-700"
+                ><Icon name="check" :size="11" :stroke="2.6" /> Pagado</span
+              >
+              <span v-else class="flex flex-wrap items-center justify-end gap-1.5">
+                <span
+                  class="rounded-full bg-accent-100 px-2 py-0.5 text-[10px] font-extrabold text-accent-700"
+                  >Debe {{ formatMoney(c.pending) }}</span
+                >
                 <button
                   v-if="auth.isAdmin && c.id"
                   type="button"
-                  class="text-sm font-extrabold text-brand-600 hover:text-brand-800"
+                  class="min-h-11 px-1 text-[11px] font-extrabold text-brand-700 hover:text-ink-900"
                   :aria-label="`Registrar pago de ${fullName(c.user)}`"
                   @click="paying = c"
                 >
@@ -140,26 +145,31 @@ async function regenerate() {
               </span>
             </template>
           </div>
+          <span class="col-span-3 h-1.5 overflow-hidden rounded-full bg-ink-900/7" aria-hidden="true">
+            <span class="block h-full rounded-full bg-accent-500" :style="{ width: width(c) }" />
+          </span>
         </li>
       </ul>
       <div
-        class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-ink-200/70 bg-ink-50/70 px-[22px] py-3 text-sm"
+        class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl glass-inset px-2.5 py-2 text-[11px] lg:text-xs"
       >
-        <span class="font-extrabold text-ink-900"> Total {{ formatMoney(data.totals.amount) }} </span>
-        <span v-if="generated" class="text-ink-600">
-          Pagado <strong class="text-success-800">{{ formatMoney(data.totals.paid) }}</strong> · Pendiente
-          <strong class="text-accent-700">{{ formatMoney(data.totals.pending) }}</strong>
+        <span class="font-extrabold text-ink-900">
+          Total <span class="num">{{ formatMoney(data.totals.amount) }}</span>
         </span>
-        <span v-if="generated && data.charges[0]?.computedAt" class="text-xs text-ink-500">
+        <span v-if="generated" class="text-ink-600">
+          Pagado <strong class="num text-success-700">{{ formatMoney(data.totals.paid) }}</strong> · Pendiente
+          <strong class="num text-accent-700">{{ formatMoney(data.totals.pending) }}</strong>
+        </span>
+        <span v-if="generated && data.charges[0]?.computedAt" class="text-[10px] text-ink-500">
           Calculado el {{ formatDateTime(data.charges[0].computedAt) }}
         </span>
       </div>
       <p
         v-if="data.totals.unpricedUnits"
-        class="flex items-start gap-2 border-t border-accent-200/70 bg-accent-50/80 px-[22px] py-3 text-sm text-accent-700"
+        class="mt-2 flex items-start gap-2 rounded-xl bg-accent-50/90 px-2.5 py-2 text-[11px] text-accent-700 lg:text-xs"
         role="note"
       >
-        <Icon name="alert" :size="16" class="mt-0.5" />
+        <Icon name="alert" :size="14" class="mt-px shrink-0" />
         <span>
           {{ formatNumber(data.totals.unpricedUnits) }}
           {{ data.totals.unpricedUnits === 1 ? 'unidad' : 'unidades' }} de productos sin compras ni precio de
@@ -169,7 +179,7 @@ async function regenerate() {
         </span>
       </p>
     </template>
-    <p v-else class="px-[22px] py-6 text-center text-sm text-ink-500">Cargando…</p>
+    <p v-else class="border-t border-ink-900/8 py-5 text-center text-xs text-ink-500">Cargando…</p>
 
     <ChargePaymentDialog :charge="paying" @close="paying = null" @done="onPaid" />
   </section>

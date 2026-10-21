@@ -58,6 +58,8 @@ export interface ProductFilter {
 
 export interface CreateProductInput {
   name: string;
+  /** Código de 2 dígitos de la máquina; si no viene (o es null), la API asigna el primero libre. */
+  code?: string | null;
   description?: string | null;
   unit?: string;
   minStock?: number;
@@ -69,6 +71,8 @@ export interface CreateProductInput {
 
 export interface UpdateProductInput {
   name?: string;
+  /** Nuevo código de la máquina. No se puede quitar (la API no acepta null): si no viene, se conserva. */
+  code?: string;
   description?: string | null;
   unit?: string;
   minStock?: number;
@@ -134,8 +138,8 @@ export interface PurchaseFilter extends PageQuery, DateRangeQuery {
 
 export type ReportScope = { periodId: string } | DateRangeQuery;
 
+/** Registro en la tablet: el PIN identifica a la persona (no se elige nombre). */
 export interface KioskMovementInput {
-  personId: string;
   pin: string;
   type: MovementType;
   items: { productId: string; quantity: number }[];

@@ -10,6 +10,7 @@ import MovementDialog from './MovementDialog.vue';
 
 const gaseosa: Product = {
   id: 'p1',
+  code: null,
   name: 'Gaseosa',
   description: null,
   unit: 'unidad',

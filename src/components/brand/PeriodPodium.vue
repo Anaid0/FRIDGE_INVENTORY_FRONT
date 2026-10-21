@@ -40,13 +40,13 @@ const steps = computed(() =>
           >
             {{ entry.user.name }}
           </p>
-          <p class="text-xs text-ink-500 tabular-nums sm:text-sm">
+          <p class="font-mono text-xs font-bold text-ink-500 tabular-nums sm:text-sm">
             {{ formatNumber(entry.totalWithdrawn) }} und.<span v-if="entry.position !== step">
               · puesto {{ entry.position }}</span
             >
           </p>
         </template>
-        <p v-else class="text-sm text-ink-400">—</p>
+        <p v-else class="text-sm font-bold text-ink-400">—</p>
       </li>
     </ol>
   </figure>

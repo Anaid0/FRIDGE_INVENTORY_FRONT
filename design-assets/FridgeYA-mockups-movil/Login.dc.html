@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FridgeYA Admin · Iniciar sesión</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&amp;family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6AAB}a:hover{color:#073B5E}
+input:focus{outline:none;border-color:#0B79C3!important;box-shadow:0 0 0 3px #CFE8F7}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #FFFFFF; font-family: 'Nunito Sans', system-ui, sans-serif; color: #1E3A50; font-size: 16px; overflow: hidden">
+
+<section style="flex-shrink: 0; padding: 72px 24px 32px; background: #E6F3FB; border-radius: 0 0 36px 36px; display: flex; flex-direction: column; gap: 18px">
+<svg width="76" height="76" viewBox="0 0 400 400" role="img" aria-label="FridgeYA"><rect width="400" height="400" rx="92" fill="#0b79c3"></rect><g transform="translate(168,6) scale(0.62)"><circle cx="28" cy="100" r="31" fill="#ffffff"></circle><circle cx="172" cy="100" r="31" fill="#ffffff"></circle><circle cx="100" cy="100" r="81" fill="#ffffff"></circle><circle cx="28" cy="100" r="24" fill="#0b79c3"></circle><circle cx="172" cy="100" r="24" fill="#0b79c3"></circle><circle cx="28" cy="100" r="11" fill="#ffffff"></circle><circle cx="172" cy="100" r="11" fill="#ffffff"></circle><circle cx="100" cy="100" r="74" fill="#0b79c3"></circle><circle cx="78" cy="90" r="28" fill="#ffffff"></circle><circle cx="122" cy="90" r="28" fill="#ffffff"></circle><ellipse cx="100" cy="128" rx="40" ry="32" fill="#ffffff"></ellipse><circle cx="80" cy="90" r="9" fill="#073b5e"></circle><circle cx="120" cy="90" r="9" fill="#073b5e"></circle><path d="M84 130 Q100 146 116 130" stroke="#0b79c3" stroke-width="6" fill="none" stroke-linecap="round"></path></g><rect x="96" y="96" width="208" height="262" rx="30" fill="#ffffff"></rect><line x1="96" y1="178" x2="304" y2="178" stroke="#0b79c3" stroke-width="10"></line><rect x="118" y="118" width="14" height="40" rx="7" fill="#0b79c3"></rect><rect x="118" y="198" width="14" height="72" rx="7" fill="#0b79c3"></rect><circle cx="292" cy="330" r="40" fill="#ff8a1f" stroke="#0b79c3" stroke-width="8"></circle><path d="M273 331 L286 344 L310 318" stroke="#ffffff" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 10px"><span style="font-family: 'Nunito', sans-serif; font-size: 34px; font-weight: 900; color: #073B5E; letter-spacing: -1px">Fridge<span style="color: #0B79C3">YA</span></span><span style="height: 26px; padding: 0 10px; border-radius: 8px; background: #073B5E; color: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 800; letter-spacing: 1px">ADMIN</span></div>
+<p style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 800; color: #073B5E; line-height: 1.25">La nevera de la oficina, en orden.</p>
+<p style="margin: 0; font-size: 15px; color: #33607F">Productos, movimientos, quincenas y compras en un solo lugar.</p>
+</div>
+</section>
+
+<form style="flex-grow: 1; padding: 28px 24px 0; display: flex; flex-direction: column; gap: 16px">
+<h1 style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 900; color: #073B5E">Entrar como administrador</h1>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="fy-email" style="font-size: 14px; font-weight: 800; color: #2C4A60">Email</label>
+<input id="fy-email" type="email" inputmode="email" autocomplete="username" value="admin@fridgeya.local" style="height: 54px; box-sizing: border-box; padding: 0 16px; border-radius: 14px; border: 1.5px solid #C9DCEA; background: #FFFFFF; font: inherit; font-size: 17px; color: #1E3A50">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="fy-pass" style="font-size: 14px; font-weight: 800; color: #2C4A60">Contraseña</label>
+<div style="position: relative; display: flex">
+<input id="fy-pass" type="password" autocomplete="current-password" value="contrasena" style="flex-grow: 1; min-width: 0; height: 54px; box-sizing: border-box; padding: 0 56px 0 16px; border-radius: 14px; border: 1.5px solid #C9DCEA; background: #FFFFFF; font: inherit; font-size: 17px; color: #1E3A50">
+<button type="button" aria-label="Mostrar contraseña" style="position: absolute; right: 5px; top: 5px; width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; color: #4F6B80; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+</div>
+</div>
+<p style="margin: 0; font-size: 14px; color: #4F6B80">Los empleados no necesitan cuenta: en la nevera solo escriben su PIN.</p>
+</form>
+
+<footer style="flex-shrink: 0; padding: 16px 24px 34px; display: flex; flex-direction: column; gap: 8px">
+<a href="AdminInicio.dc.html" style="height: 58px; border-radius: 18px; background: #0B79C3; color: #FFFFFF; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Nunito', sans-serif; font-size: 19px; font-weight: 900">Entrar</a>
+<a href="Main.dc.html" style="height: 48px; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; color: #0B6AAB; font-weight: 800"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Volver a la nevera</a>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

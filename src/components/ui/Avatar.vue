@@ -5,30 +5,35 @@ import { initials as initialsOf } from '@/utils/format';
 /**
  * Iniciales de una persona sobre un tono suave (azul, naranja, verde, violeta o rosa), como en los mockups.
  * El tono sale del id: la misma persona siempre tiene el mismo color.
+ * `solid`: azul de la marca con letras blancas (el primer puesto del ranking, el administrador en Más).
  */
 const props = withDefaults(
   defineProps<{
     person: { id: string; name: string; lastname: string };
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
     locked?: boolean;
+    solid?: boolean;
   }>(),
-  { size: 'md', locked: false },
+  { size: 'md', locked: false, solid: false },
 );
 
 const TONES = [
-  'bg-brand-100 text-brand-600',
+  'bg-brand-100 text-brand-700',
   'bg-accent-100 text-accent-700',
-  'bg-success-50 text-success-800',
+  'bg-success-50 text-success-700',
   'bg-violet-50 text-violet-700',
   'bg-rose-50 text-rose-700',
 ];
 
 const tone = computed(() => {
+  if (props.locked) return 'bg-ink-200 text-ink-500';
+  if (props.solid) return 'bg-brand-600 text-white';
   let hash = 0;
   for (const char of props.person.id) hash = (hash * 31 + char.charCodeAt(0)) | 0;
   return TONES[Math.abs(hash) % TONES.length];
 });
 const SIZES = {
+  xs: 'size-[34px] text-xs',
   sm: 'size-9 text-xs',
   md: 'size-10 text-sm',
   lg: 'size-[76px] text-3xl',
@@ -38,8 +43,8 @@ const SIZES = {
 
 <template>
   <span
-    class="grid shrink-0 place-items-center rounded-full font-black"
-    :class="[SIZES[size], locked ? 'bg-ink-200 text-ink-500' : tone]"
+    class="grid shrink-0 place-items-center rounded-full font-display font-black"
+    :class="[SIZES[size], tone]"
     aria-hidden="true"
   >
     <svg

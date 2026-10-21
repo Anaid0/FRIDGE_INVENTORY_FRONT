@@ -44,6 +44,26 @@ const PATHS = {
   calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
   more: 'M6 12h.01M12 12h.01M18 12h.01',
   backspace: 'M9 5h11a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9l-6-7zM12 9l6 6M18 9l-6 6',
+  eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+  // Barra inferior de la administración y cabecera de la máquina (mockups móviles).
+  navHome: 'M3 11l9-8 9 8M5 10v10h14V10',
+  navBox: 'M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10',
+  navSwap: 'M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4',
+  navWallet: 'M5 6h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zM3 10h18M16 15h2',
+  clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2',
+  bag: 'M6 8h12l-1 12H7zM9 8V6a3 3 0 0 1 6 0v2',
+  shield: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z',
+  monitor: 'M3 5h18v11H3zM8 20h8M12 16v4',
+  filter: 'M4 6h16M7 12h10M10 18h4',
+  camera: 'M4 8h3l2-3h6l2 3h3v11H4zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7',
+  upload: 'M12 16V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4',
+  enter: 'M10 17l5-5-5-5M15 12H3M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5',
+  wifiOff: 'M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5.2-2.8M12 20h.01M19 13a10 10 0 0 0-2.4-1.7M2 8.8a15 15 0 0 1 4.2-2.6M22 8.8A15 15 0 0 0 10.7 5',
+  sidebarClose: 'M4 4h16v16H4zM9 4v16M16 9l-3 3 3 3',
+  sidebarOpen: 'M4 4h16v16H4zM9 4v16M13 9l3 3-3 3',
+  eyeOff:
+    'M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6A17.4 17.4 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2',
 } as const;
 
 export type IconName = keyof typeof PATHS;

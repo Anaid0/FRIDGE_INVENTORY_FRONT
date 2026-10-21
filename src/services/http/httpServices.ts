@@ -44,10 +44,10 @@ export function createKioskService(http: AxiosInstance): KioskService {
     computeRanking: async (periodId) => (await http.post(`/funding-periods/${periodId}/ranking`)).data,
     latestMovements: async (limit = 20) =>
       (await get<{ items: MovementView[] }>('/movements', { pageSize: limit })).items,
+    movements: (query) => get('/movements', query),
     register: async (input) => (await http.post('/kiosk/movements', input)).data,
-    changePin: async (personId, currentPin, newPin) => {
-      await http.post(`/kiosk/people/${personId}/pin`, { currentPin, newPin });
-    },
+    adminSession: async (code) => (await http.post('/kiosk/admin-session', { code })).data,
+    changePin: async (currentPin, newPin) => (await http.post('/kiosk/pin', { currentPin, newPin })).data,
   };
 }
 
@@ -64,6 +64,9 @@ export function createHttpServices(http: AxiosInstance, kioskHttp: AxiosInstance
   const auth: AuthService = {
     login: (email, password) => post('/auth/login', { email, password }),
     me: () => get('/auth/me'),
+    setAdminCode: async (password, code) => {
+      await http.put('/auth/me/admin-code', { password, code });
+    },
   };
 
   const users: UserService = {
@@ -78,7 +81,7 @@ export function createHttpServices(http: AxiosInstance, kioskHttp: AxiosInstance
     activity: (periodId) => get('/stats/people-activity', { periodId }),
     create: (input) => post('/people', input),
     update: (id, input) => patch(`/people/${id}`, input),
-    resetPin: (id, pin) => post(`/people/${id}/pin`, { pin }),
+    resetPin: (id, pin, adminPassword) => post(`/people/${id}/pin`, { pin, adminPassword }),
   };
 
   const kioskAdmin: KioskAdminService = {

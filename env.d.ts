@@ -3,6 +3,8 @@
 interface ImportMetaEnv {
   /** URL base de la API. Por defecto '/api' (proxy de Vite en desarrollo). */
   readonly VITE_API_URL?: string;
+  /** App Android: dirección de la API de fábrica (no pide servidor al abrir). Ej. https://mi-tunel/api */
+  readonly VITE_NATIVE_API_URL?: string;
   readonly VITE_CURRENCY?: string;
   readonly VITE_LOCALE?: string;
 }

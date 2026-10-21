@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FridgeYA Admin · Editar producto</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&amp;family=Nunito+Sans:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6AAB}a:hover{color:#073B5E}
+input:focus,select:focus{outline:none;border-color:#0B79C3!important;box-shadow:0 0 0 3px rgba(11,121,195,0.2)}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 900px; box-sizing: border-box; overflow: hidden; background: linear-gradient(165deg, #EAF5FD 0%, #D4E9F8 55%, #EEF4F9 100%); font-family: 'Nunito Sans', system-ui, sans-serif; color: #1E3A50; font-size: 13px">
+<div aria-hidden="true" style="position: absolute; width: 300px; height: 300px; left: -110px; top: -90px; border-radius: 50%; background: #7FC3EE; opacity: 0.55; filter: blur(60px)"></div>
+<div aria-hidden="true" style="position: absolute; width: 260px; height: 260px; right: -110px; top: 460px; border-radius: 50%; background: #9FE0C0; opacity: 0.45; filter: blur(64px)"></div>
+
+<div style="position: relative; height: 100%; box-sizing: border-box; padding: 48px 14px 0; display: flex; flex-direction: column; gap: 10px">
+<header style="display: flex; align-items: center; gap: 8px">
+<a href="Productos.dc.html" aria-label="Volver a productos" style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); color: #073B5E; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+<div style="flex-grow: 1; display: flex; flex-direction: column"><span style="font-size: 11px; color: #4F6B80">Productos</span><h1 style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900; color: #073B5E">Coca cola 250ml</h1></div>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; padding: 4px 8px; border-radius: 8px; background: #073B5E; color: #FFFFFF">21</span>
+</header>
+
+<section aria-label="Stock" style="padding: 12px; border-radius: 18px; background: rgba(255,255,255,0.68); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 8px 22px rgba(7,59,94,0.08); display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex-grow: 1; display: flex; flex-direction: column"><span style="font-size: 11px; font-weight: 800; letter-spacing: .8px; color: #4F6B80">EN LA NEVERA</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 800; color: #073B5E">9 <span style="font-size: 12px; color: #4F6B80">und · mín. 4</span></span></span>
+<span style="display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 12px; background: rgba(7,59,94,0.06)"><button type="button" aria-label="Menos" style="width: 40px; height: 40px; border-radius: 10px; border: 0; background: #FFFFFF; color: #073B5E; font: inherit; font-size: 18px; font-weight: 900; cursor: pointer">−</button><span style="width: 30px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; color: #073B5E">12</span><button type="button" aria-label="Más" style="width: 40px; height: 40px; border-radius: 10px; border: 0; background: #FFFFFF; color: #073B5E; font: inherit; font-size: 18px; font-weight: 900; cursor: pointer">+</button></span>
+</div>
+<button type="button" style="height: 44px; border-radius: 12px; border: 0; background: #157A4B; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"></path><path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path></svg>Ingresar 12 a la nevera · quedarán 21</button>
+<details style="border-top: 1px solid rgba(7,59,94,0.08); padding-top: 6px">
+<summary style="min-height: 36px; display: flex; align-items: center; cursor: pointer; font-size: 12px; font-weight: 800; color: #0B6AAB">Registrar un retiro a nombre de otra persona</summary>
+<div style="display: flex; gap: 6px; padding-top: 6px"><select aria-label="Persona" style="flex-grow: 1; height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; font: inherit; color: #1E3A50"><option>David Ospino</option></select><button type="button" style="height: 40px; padding: 0 14px; border-radius: 10px; border: 0; background: #FF8A1F; color: #073B5E; font: inherit; font-weight: 800; cursor: pointer">Retirar 1</button></div>
+</details>
+<span style="font-size: 11px; color: #4F6B80">Queda en el log con tu nombre como quien registra.</span>
+</section>
+
+<section aria-label="Datos del producto" style="padding: 12px; border-radius: 18px; background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; flex-direction: column; gap: 10px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 8px">
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; color: #2C4A60">Nombre<input type="text" value="Coca cola 250ml" style="height: 40px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; color: #1E3A50"></label>
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; color: #2C4A60">Código<input type="text" inputmode="numeric" maxlength="2" value="21" style="height: 40px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #073B5E"></label>
+</div>
+<div role="group" aria-label="Categoría" style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; font-weight: 800; color: #2C4A60">Categoría</span><div style="display: flex; gap: 6px; flex-wrap: wrap">
+<button type="button" aria-pressed="true" style="height: 34px; padding: 0 12px; border-radius: 10px; border: 1.5px solid #0B79C3; background: #E0EFFA; color: #073B5E; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer">Bebidas</button>
+<button type="button" aria-pressed="false" style="height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; color: #2C4A60; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer">Snacks</button>
+<button type="button" aria-pressed="false" style="height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; color: #2C4A60; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer">Lácteos</button>
+<button type="button" aria-label="Nueva categoría" style="height: 34px; width: 34px; border-radius: 10px; border: 1px dashed #9DB6C9; background: transparent; color: #0B6AAB; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer">+</button>
+</div></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; color: #2C4A60">Se cuenta por<select style="height: 40px; padding: 0 8px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; font: inherit; font-size: 13px; color: #1E3A50"><option>Unidad</option><option>Botella</option><option>Paquete</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; color: #2C4A60">Stock mínimo<input type="number" inputmode="numeric" value="4" style="height: 40px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: #073B5E"></label>
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; color: #2C4A60">Precio ref.<input type="text" inputmode="numeric" value="$ 2.000" style="height: 40px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; border: 1px solid #C9DCEA; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: #073B5E"></label>
+</div>
+<label style="min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer"><span style="display: flex; flex-direction: column"><span style="font-size: 12px; font-weight: 800; color: #2C4A60">Visible en la máquina</span><span style="font-size: 11px; color: #4F6B80">Los empleados lo ven y lo pueden retirar</span></span><input type="checkbox" checked="" role="switch" style="width: 44px; height: 26px; margin: 0; accent-color: #0B79C3"></label>
+</section>
+
+<button type="button" style="align-self: center; min-height: 40px; padding: 0 12px; border: 0; background: transparent; color: #B42318; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer">Desactivar producto…</button>
+</div>
+
+<footer style="position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 14px 30px; background: rgba(255,255,255,0.72); border-top: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); display: flex; gap: 8px">
+<a href="Productos.dc.html" style="width: 110px; height: 46px; box-sizing: border-box; border-radius: 14px; border: 1px solid #C9DCEA; background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; text-decoration: none; color: #073B5E; font-weight: 800">Cancelar</a>
+<a href="Productos.dc.html" style="flex-grow: 1; height: 46px; border-radius: 14px; background: #0B79C3; color: #FFFFFF; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900">Guardar cambios</a>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

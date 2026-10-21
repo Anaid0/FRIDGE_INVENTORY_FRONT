@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMemoryStore } from '@/native/keyValueStore';
-import { checkServer, createServerConfig, normalizeServerUrl, SERVER_URL_KEY } from './serverConfig';
+import {
+  checkServer,
+  createServerConfig,
+  normalizeServerUrl,
+  SERVER_PRESET_KEY,
+  SERVER_URL_KEY,
+  serverHeaders,
+} from './serverConfig';
 
 describe('normalizeServerUrl', () => {
   it.each([
@@ -80,5 +87,52 @@ describe('createServerConfig', () => {
     const again = createServerConfig({ configurable: true, store, defaultUrl: '/api' });
     await again.load();
     expect(again.storedUrl()).toBe('http://192.168.1.50:3000/api');
+  });
+});
+
+describe('dirección de fábrica del APK (VITE_NATIVE_API_URL)', () => {
+  const TUNNEL = 'https://abc-3000.use2.devtunnels.ms/api';
+
+  it('no pide servidor y usa la dirección de fábrica', async () => {
+    const config = createServerConfig({
+      configurable: true,
+      store: createMemoryStore(),
+      defaultUrl: '/api',
+      presetUrl: TUNNEL,
+    });
+    await config.load();
+    expect(config.needsSetup()).toBe(false);
+    expect(config.apiUrl()).toBe(TUNNEL);
+  });
+
+  it('descarta una dirección guardada con otro APK, pero respeta la que se cambió con este', async () => {
+    const store = createMemoryStore();
+    await store.set(SERVER_URL_KEY, 'http://192.168.1.5:3000/api'); // APK anterior, sin dirección de fábrica
+    const config = createServerConfig({ configurable: true, store, defaultUrl: '/api', presetUrl: TUNNEL });
+    await config.load();
+    expect(config.apiUrl()).toBe(TUNNEL);
+
+    await config.save('http://10.0.0.2:3000/api'); // "Cambiar servidor" en este APK
+    expect(await store.get(SERVER_PRESET_KEY)).toBe(TUNNEL);
+    const again = createServerConfig({ configurable: true, store, defaultUrl: '/api', presetUrl: TUNNEL });
+    await again.load();
+    expect(again.apiUrl()).toBe('http://10.0.0.2:3000/api');
+  });
+
+  it('en el navegador se ignora (la web usa /api)', async () => {
+    const config = createServerConfig({
+      configurable: false,
+      store: createMemoryStore(),
+      defaultUrl: '/api',
+      presetUrl: TUNNEL,
+    });
+    await config.load();
+    expect(config.apiUrl()).toBe('/api');
+  });
+
+  it('a los túneles de VS Code les manda la cabecera para saltar la página de aviso', () => {
+    expect(serverHeaders(TUNNEL)).toEqual({ 'X-Tunnel-Skip-AntiPhishing-Page': 'true' });
+    expect(serverHeaders('http://192.168.1.5:3000/api')).toEqual({});
+    expect(serverHeaders('/api')).toEqual({});
   });
 });

@@ -32,7 +32,7 @@ function stubs<T extends object>(names: (keyof T)[]): T {
 
 export function createFakeServices(): Services {
   return {
-    auth: stubs(['login', 'me']),
+    auth: stubs(['login', 'me', 'setAdminCode']),
     users: stubs(['list', 'options', 'createAdmin', 'update']),
     people: stubs(['list', 'activity', 'create', 'update', 'resetPin']),
     kioskAdmin: stubs(['listDevices', 'pair', 'revoke']),
@@ -47,7 +47,9 @@ export function createFakeServices(): Services {
       'periodRanking',
       'computeRanking',
       'latestMovements',
+      'movements',
       'register',
+      'adminSession',
       'changePin',
     ]),
     catalog: stubs([

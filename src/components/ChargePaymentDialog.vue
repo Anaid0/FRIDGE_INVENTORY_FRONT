@@ -5,6 +5,7 @@ import { useServices } from '@/services/container';
 import { ApiError, errorMessage } from '@/services/errors';
 import { useToastStore } from '@/stores/toasts';
 import { formatMoney, fullName, parseMoneyInput, toCents } from '@/utils/format';
+import Avatar from './ui/Avatar.vue';
 import BaseDialog from './ui/BaseDialog.vue';
 import FormField from './ui/FormField.vue';
 
@@ -78,30 +79,34 @@ async function submit() {
       <p v-if="error" class="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700" role="alert">
         {{ error }}
       </p>
-      <dl class="grid grid-cols-3 gap-3 rounded-2xl bg-ink-50/90 px-4 py-3 text-sm">
-        <div>
-          <dt class="text-ink-500">Consumió</dt>
-          <dd class="font-extrabold text-ink-900 tabular-nums">{{ formatMoney(shown.amount) }}</dd>
+      <div class="flex items-center gap-2.5">
+        <Avatar :person="shown.user" size="sm" />
+        <p class="min-w-0 text-sm text-ink-600">
+          <strong class="block truncate font-extrabold text-ink-900">{{ fullName(shown.user) }}</strong>
+          {{ shown.period.name }}
+        </p>
+      </div>
+      <dl class="grid grid-cols-3 gap-2">
+        <div class="rounded-xl glass-inset px-2.5 py-2">
+          <dt class="text-[11px] text-ink-500">Consumió</dt>
+          <dd class="num truncate text-sm text-ink-900">{{ formatMoney(shown.amount) }}</dd>
         </div>
-        <div>
-          <dt class="text-ink-500">Ya pagó</dt>
-          <dd class="font-extrabold text-ink-900 tabular-nums">{{ formatMoney(shown.paid) }}</dd>
+        <div class="rounded-xl glass-inset px-2.5 py-2">
+          <dt class="text-[11px] text-ink-500">Ya pagó</dt>
+          <dd class="num truncate text-sm text-ink-900">{{ formatMoney(shown.paid) }}</dd>
         </div>
-        <div>
-          <dt class="text-ink-500">Pendiente</dt>
-          <dd class="font-extrabold text-accent-700 tabular-nums">{{ formatMoney(shown.pending) }}</dd>
+        <div class="rounded-xl bg-accent-50 px-2.5 py-2">
+          <dt class="text-[11px] text-accent-700">Pendiente</dt>
+          <dd class="num truncate text-sm text-accent-700">{{ formatMoney(shown.pending) }}</dd>
         </div>
       </dl>
-      <p class="text-sm text-ink-600">
-        <strong class="text-ink-900">{{ fullName(shown.user) }}</strong> · {{ shown.period.name }}
-      </p>
       <FormField id="cp-amount" label="Monto" hint="Puede ser un pago parcial" :error="amountError">
         <input
           id="cp-amount"
           v-model="amount"
           type="text"
           inputmode="decimal"
-          class="input tabular-nums"
+          class="input num text-base"
           :aria-invalid="Boolean(amountError)"
         />
       </FormField>
@@ -115,11 +120,11 @@ async function submit() {
           placeholder="Ej.: transferencia"
         />
       </FormField>
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" class="btn-secondary" :disabled="saving" @click="emit('close')">
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="button" class="btn-secondary min-h-11" :disabled="saving" @click="emit('close')">
           Cancelar
         </button>
-        <button type="submit" class="btn-primary" :disabled="saving || !amount">
+        <button type="submit" class="btn-primary min-h-11" :disabled="saving || !amount">
           {{ saving ? 'Guardando…' : 'Registrar pago' }}
         </button>
       </div>

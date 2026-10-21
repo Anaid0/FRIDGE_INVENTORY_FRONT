@@ -27,6 +27,8 @@ export interface User extends UserRef {
   /** Solo los administradores tienen email (las personas usan PIN). */
   email: string | null;
   role: Role;
+  /** Solo administradores: si ya tiene código para entrar desde la máquina. */
+  hasAdminCode?: boolean;
   isActive: boolean;
   createdAt: ISODate;
   updatedAt: ISODate;
@@ -87,6 +89,8 @@ export interface Category {
 
 export interface Product {
   id: string;
+  /** Código de 2 dígitos que se marca en la máquina (10–99). */
+  code: string | null;
   name: string;
   description: string | null;
   unit: string;
@@ -119,7 +123,7 @@ export interface Movement {
   registeredBy: string;
   note: string | null;
   purchaseItemId: string | null;
-  /** Salidas manuales: precio unitario guardado al sacar. */
+  /** Precio unitario: el guardado al sacar (retiros), el de compra o el del producto al ingresar. */
   unitPrice: Decimal | null;
   createdAt: ISODate;
 }
@@ -138,7 +142,7 @@ export interface MovementView {
   performedBy: UserRef;
   registeredBy: UserRef;
   purchaseId: string | null;
-  /** Salidas manuales: precio unitario guardado al sacar. */
+  /** Precio unitario: el guardado al sacar (retiros), el de compra o el del producto al ingresar. */
   unitPrice: Decimal | null;
 }
 

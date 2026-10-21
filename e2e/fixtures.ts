@@ -26,7 +26,7 @@ export const MARTA = { name: 'Marta Ríos', pin: '4826' };
 export async function loginAdmin(page: Page, user: { email: string; password: string } = ADMIN) {
   await page.goto('/admin/login');
   await page.getByLabel('Email').fill(user.email);
-  await page.getByLabel('Contraseña').fill(user.password);
+  await page.getByLabel('Contraseña', { exact: true }).fill(user.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page).not.toHaveURL(/\/login/);
 }
@@ -46,14 +46,11 @@ export function activeView(page: Page) {
 
 /** Número de unidades que muestra la fila de un producto en /admin/productos. */
 export async function stockOf(page: Page, productName: string): Promise<number> {
-  const view = activeView(page);
   // `has` se evalúa dentro de cada fila: el localizador interno debe partir de `page`, no de la vista.
-  const row = view.getByRole('row').filter({ has: page.getByText(productName, { exact: true }) });
+  const row = activeView(page)
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('link', { name: new RegExp(`^Editar ${productName}(,|$)`) }) });
   return Number(await row.locator('[data-stock]').innerText());
-}
-
-export function headerBadge(page: Page) {
-  return activeView(page).getByRole('link', { name: /Quien más retira|Aún no hay retiros/ });
 }
 
 /**
@@ -113,47 +110,51 @@ export async function apiProductId(request: APIRequestContext, adminToken: strin
 export async function openPairedTablet(page: Page, kioskToken: string) {
   await page.addInitScript((token) => localStorage.setItem('fridgeya.kioskToken', token), kioskToken);
   await page.goto('/');
-  await expect(activeView(page).getByText('Quien más retira')).toBeVisible();
+  await expect(machine(page)).toBeVisible();
 }
 
-/** Toca un producto de la grilla N veces. */
+/** La vitrina de la máquina expendedora. */
+export const machine = (page: Page) => activeView(page).getByRole('region', { name: 'Máquina de productos' });
+/** "Tu retiro": lo elegido, con un botón para quitar cada producto. */
+export const cartPanel = (page: Page) => activeView(page).getByRole('region', { name: 'Tu retiro' });
+/** El teclado de la máquina (pantalla + teclas). */
+export const keypad = (page: Page) => activeView(page).getByRole('region', { name: 'Teclado' });
+
+/** Toca un producto de la máquina N veces. */
 export async function tapProduct(page: Page, name: string, times = 1) {
-  const tile = activeView(page).getByRole('button', { name: new RegExp(`^${name}:`) });
+  const tile = machine(page).getByRole('button', { name: new RegExp(`^Agregar ${name}, quedan`) });
   for (let i = 0; i < times; i++) await tile.click();
 }
 
-export async function typePin(page: Page, pin: string) {
-  for (const digit of pin) await activeView(page).getByRole('button', { name: digit, exact: true }).click();
+/** Marca dígitos en el teclado de la máquina (o en el teclado de PIN de "Cambiar mi PIN"). */
+export async function typePin(page: Page, digits: string) {
+  for (const digit of digits) await activeView(page).getByRole('button', { name: digit, exact: true }).click();
+}
+
+/** Marca dígitos y pulsa OK en la máquina. */
+export async function typeAndOk(page: Page, digits: string) {
+  await typePin(page, digits);
+  await keypad(page).getByRole('button', { name: /^OK/ }).click();
 }
 
 /**
- * Cambia de pestaña en la navegación de la tablet (barra lateral, o abajo en el celular) y comprueba que
- * quedó seleccionada. Pestañas: Sacar, Meter, Ranking, Historial.
+ * Retirar: tocar los productos → PIN + OK (el PIN identifica a la persona).
+ * En el celular el PIN va en un segundo paso: primero "Retirar · N".
  */
-export async function openTab(page: Page, label: string) {
-  await activeView(page).getByRole('tab', { name: label }).click();
-  await expect(activeView(page).getByRole('tab', { name: label })).toHaveAttribute('aria-selected', 'true');
-}
-
-/** Lista de lo elegido (panel lateral de la tablet). */
-export const cartPanel = (page: Page) =>
-  activeView(page).getByRole('complementary', { name: 'Lo que elegiste' });
-
-/** Sacar/Meter: productos → Continuar → persona → PIN. */
 export async function kioskRegister(
   page: Page,
   items: [string, number][],
   person: { name: string; pin: string },
 ) {
   for (const [name, times] of items) await tapProduct(page, name, times);
-  await cartPanel(page)
-    .getByRole('button', { name: /Continuar/ })
-    .click();
-  await activeView(page)
-    .getByRole('button', { name: new RegExp(person.name.split(' ')[0]!) })
-    .click();
-  await typePin(page, person.pin);
+  const withdraw = cartPanel(page).getByRole('button', { name: /^Retirar/ });
+  if (await withdraw.isVisible()) await withdraw.click();
+  await expect(keypad(page)).toContainText('TU PIN');
+  await typeAndOk(page, person.pin);
 }
+
+/** Código del administrador del e2e (backend: scripts/e2eEnv.ts → E2E_ADMIN_CODE). */
+export const ADMIN_CODE = '482915';
 
 // ---------------------------------------------------------------------------------------------------------
 // Diseño
@@ -175,4 +176,21 @@ export async function horizontalOverflow(page: Page): Promise<number> {
     }
     return worst;
   });
+}
+
+/** Desliza un dedo en horizontal (eventos táctiles reales de Chrome), de `fromX` a `toX` a la altura `y`. */
+export async function swipe(page: Page, fromX: number, toX: number, y: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const steps = 8;
+  const point = (x: number) => [{ x, y, id: 1 }];
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point(fromX) });
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: point(fromX + ((toX - fromX) * i) / steps),
+    });
+    await page.waitForTimeout(16);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
 }

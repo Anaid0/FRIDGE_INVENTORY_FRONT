@@ -7,6 +7,7 @@ import LineChart from '@/components/charts/LineChart.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import ErrorState from '@/components/ui/ErrorState.vue';
 import PageHeader from '@/components/ui/PageHeader.vue';
+import SkeletonRows from '@/components/ui/SkeletonRows.vue';
 import StatTile from '@/components/ui/StatTile.vue';
 import { useAsync } from '@/composables/useAsync';
 import type { ReportScope } from '@/domain/inputs';
@@ -116,29 +117,45 @@ const priceProductName = computed(
   <AdminPage title="Reportes de gasto">
     <section>
       <PageHeader
-        title="Reportes de gasto"
-        subtitle="En qué se va el dinero del fondo. No incluye compras anuladas."
+        title="Reportes"
+        back="/admin/mas"
+        subtitle="En qué se va el dinero del fondo · sin compras anuladas"
       />
 
-      <div class="mb-6 flex flex-wrap items-center gap-3">
-        <select v-model="filters.scope" class="input w-auto" aria-label="Periodo del reporte">
-          <optgroup label="Por fecha">
-            <option value="days:30">Últimos 30 días</option>
-            <option value="days:90">Últimos 90 días</option>
-            <option value="custom">Rango personalizado…</option>
-          </optgroup>
-          <optgroup v-if="periods.length" label="Por quincena">
-            <option v-for="p in periods" :key="p.periodId" :value="`period:${p.periodId}`">
-              {{ p.name }}
-            </option>
-          </optgroup>
-        </select>
+      <!-- Periodo del reporte -->
+      <div class="mb-3 flex flex-wrap items-end gap-2">
+        <label class="flex min-w-0 flex-col gap-1">
+          <span class="eyebrow text-[10px] text-ink-500">Periodo</span>
+          <select
+            v-model="filters.scope"
+            class="input min-h-11 w-auto max-w-full py-2 text-sm font-bold"
+            aria-label="Periodo del reporte"
+          >
+            <optgroup label="Por fecha">
+              <option value="days:30">Últimos 30 días</option>
+              <option value="days:90">Últimos 90 días</option>
+              <option value="custom">Rango personalizado…</option>
+            </optgroup>
+            <optgroup v-if="periods.length" label="Por quincena">
+              <option v-for="p in periods" :key="p.periodId" :value="`period:${p.periodId}`">
+                {{ p.name }}
+              </option>
+            </optgroup>
+          </select>
+        </label>
         <template v-if="filters.scope === 'custom'">
-          <label class="flex items-center gap-2 text-sm text-ink-600">
-            Desde <input v-model="filters.from" type="date" class="input w-auto" />
+          <label class="flex flex-col gap-1">
+            <span class="eyebrow text-[10px] text-ink-500">Desde</span>
+            <input v-model="filters.from" type="date" class="input min-h-11 w-auto py-2 text-sm" />
           </label>
-          <label class="flex items-center gap-2 text-sm text-ink-600">
-            Hasta <input v-model="filters.to" type="date" class="input w-auto" :min="filters.from" />
+          <label class="flex flex-col gap-1">
+            <span class="eyebrow text-[10px] text-ink-500">Hasta</span>
+            <input
+              v-model="filters.to"
+              type="date"
+              class="input min-h-11 w-auto py-2 text-sm"
+              :min="filters.from"
+            />
           </label>
         </template>
       </div>
@@ -151,11 +168,15 @@ const priceProductName = computed(
 
       <div
         v-else
-        class="space-y-6 transition-opacity"
+        class="flex flex-col gap-2.5 transition-opacity lg:gap-4"
         :class="{ 'opacity-60': spending.loading.value && spending.data.value }"
       >
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatTile label="Total gastado" :value="spending.data.value ? formatMoney(totals.spent) : '—'" />
+        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:gap-4">
+          <StatTile
+            class="col-span-2 sm:col-span-1"
+            label="Total gastado"
+            :value="spending.data.value ? formatMoney(totals.spent) : '—'"
+          />
           <StatTile
             label="Unidades compradas"
             :value="spending.data.value ? formatNumber(totals.units) : '—'"
@@ -166,14 +187,19 @@ const priceProductName = computed(
           />
         </div>
 
-        <div v-if="spending.data.value && !productRows.length" class="card">
-          <EmptyState icon="chart" title="No hay compras en este periodo" />
-        </div>
+        <SkeletonRows v-if="!spending.data.value" :rows="4" label="Cargando el reporte" />
 
-        <div v-else class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div class="card p-5">
-            <h2 class="text-[19px] font-black text-ink-900">Gasto por producto</h2>
-            <p class="mb-4 text-xs text-ink-500">
+        <EmptyState
+          v-else-if="!productRows.length"
+          card
+          title="Nada por aquí"
+          message="No hay compras en este periodo. Prueba con otro."
+        />
+
+        <div v-else class="grid grid-cols-1 gap-2.5 lg:grid-cols-2 lg:gap-4">
+          <div class="card p-4">
+            <h2 class="section-title">Gasto por producto</h2>
+            <p class="mb-3 text-xs text-ink-500">
               De mayor a menor{{
                 (spending.data.value?.byProduct.length ?? 0) > TOP_PRODUCTS ? ` · top ${TOP_PRODUCTS}` : ''
               }}
@@ -185,9 +211,9 @@ const priceProductName = computed(
               value-header="Gastado"
             />
           </div>
-          <div class="card p-5">
-            <h2 class="text-[19px] font-black text-ink-900">Gasto por categoría</h2>
-            <p class="mb-4 text-xs text-ink-500">De mayor a menor</p>
+          <div class="card p-4">
+            <h2 class="section-title">Gasto por categoría</h2>
+            <p class="mb-3 text-xs text-ink-500">De mayor a menor</p>
             <BarChart
               :rows="categoryRows"
               caption="Gasto por categoría"
@@ -197,25 +223,33 @@ const priceProductName = computed(
           </div>
         </div>
 
-        <div class="card p-5">
-          <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 class="text-[19px] font-black text-ink-900">Evolución del precio</h2>
+        <div class="card p-4">
+          <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div class="min-w-0">
+              <h2 class="section-title">Evolución del precio</h2>
               <p class="text-xs text-ink-500">
                 Precio unitario pagado por {{ priceProductName }} en cada compra, en orden de fecha (todo el
                 historial)
               </p>
             </div>
-            <select v-model="priceProductId" class="input w-auto" aria-label="Producto">
+            <select
+              v-model="priceProductId"
+              class="input min-h-11 w-auto max-w-full py-2 text-sm font-bold"
+              aria-label="Producto"
+            >
               <option value="" disabled>Elige un producto</option>
               <option v-for="p in lookups.products" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
           </div>
-          <p v-if="prices.error.value" class="text-sm text-danger-700">{{ prices.error.value }}</p>
+          <ErrorState
+            v-if="prices.error.value"
+            :message="prices.error.value"
+            @retry="priceProductId && prices.run(priceProductId)"
+          />
           <EmptyState
             v-else-if="prices.data.value && !pricePoints.length"
-            icon="chart"
-            title="Este producto no se ha comprado aún"
+            title="Sin compras de este producto"
+            message="Este producto no se ha comprado aún."
           />
           <LineChart
             v-else-if="pricePoints.length"
@@ -225,6 +259,7 @@ const priceProductName = computed(
             :format-tick="(v) => formatMoney(v)"
             :format-date="(iso) => formatDateTime(iso).split(',')[0] ?? iso"
           />
+          <SkeletonRows v-else-if="priceProductId" bare :rows="2" label="Cargando precios" />
         </div>
       </div>
     </section>

@@ -9,6 +9,7 @@ import PurchaseFormView from './PurchaseFormView.vue';
 
 const product = (id: string, name: string): Product => ({
   id,
+  code: null,
   name,
   description: null,
   unit: 'unidad',
@@ -118,13 +119,13 @@ describe('PurchaseFormView', () => {
     await wrapper.get('[id^="pl-product-"]').setValue('g');
     await wrapper
       .findAll('button')
-      .find((b) => b.text() === 'Por paquete')!
+      .find((b) => b.text() === 'Paquete')!
       .trigger('click');
     await wrapper.get('[id^="pl-packs-"]').setValue(2);
     await wrapper.get('[id^="pl-per-"]').setValue(5);
     await wrapper.get('[id^="pl-pack-price-"]').setValue('15000');
     const calc = () => wrapper.get('[id^="pl-calc-"]').text().replace(/\s/g, ' ');
-    expect(calc()).toMatch(/10 unidades · \$ 3\.000 c\/u/);
+    expect(calc()).toMatch(/Entran 10 unidades.*\$ 3\.000 c\/u/);
 
     // Descuento en el segundo paquete: 15.000 + 9.000
     await wrapper.get('[id^="pl-total-"]').setValue('24.000');

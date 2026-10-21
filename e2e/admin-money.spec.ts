@@ -35,7 +35,7 @@ test.describe('Quincenas y compras (administración)', () => {
     const form = activeView(page);
     await form.getByLabel('¿Quién compró?').selectOption({ label: LUIS.name });
     await form.getByLabel('Tienda').fill('Tienda E2E');
-    await form.getByLabel('Producto 1', { exact: true }).selectOption({ label: 'Yogur de fresa' });
+    await form.getByLabel('Producto 1', { exact: true }).selectOption({ label: '13 · Yogur de fresa' }) // demo: el yogur tiene el código 13;
     await form.getByLabel('Cantidad').first().fill('4');
     await form.getByLabel('Precio unitario').first().fill('3.100');
     await expect(form.getByText(money('12.400')).first()).toBeVisible();

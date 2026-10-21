@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { KioskPerson } from '@/domain/models';
 import { ApiError, errorMessage } from '@/services/errors';
 import { useKioskStore } from '@/stores/kiosk';
 import { isTrivialPin } from '@/utils/format';
-import Avatar from '../ui/Avatar.vue';
 import Icon from '../ui/Icon.vue';
 import PinPad from './PinPad.vue';
 
-/** Cambiar el propio PIN en la tablet: actual → nuevo → confirmación. */
-const props = defineProps<{ person: KioskPerson }>();
-const emit = defineEmits<{ done: []; cancel: [] }>();
+/** Cambiar el propio PIN en la tablet: actual (identifica a la persona) → nuevo → confirmación. */
+const emit = defineEmits<{ done: [name: string]; cancel: [] }>();
 
 const kiosk = useKioskStore();
 type Step = 'current' | 'new' | 'confirm';
@@ -59,12 +56,15 @@ async function onComplete(pin: string) {
   }
   saving.value = true;
   try {
-    await kiosk.changePin(props.person.id, current.value, next.value);
-    emit('done');
+    emit('done', await kiosk.changePin(current.value, next.value));
   } catch (e) {
     error.value = errorMessage(e);
     // Si el PIN actual estaba mal (o está bloqueado), se empieza de nuevo.
-    if (e instanceof ApiError && ['INVALID_PIN', 'PIN_LOCKED'].includes(e.code)) step.value = 'current';
+    if (e instanceof ApiError && ['INVALID_PIN', 'PIN_LOCKED', 'PIN_AMBIGUOUS'].includes(e.code)) {
+      step.value = 'current';
+    }
+    // Ese PIN nuevo ya es de otra persona: se elige otro.
+    if (e instanceof ApiError && e.code === 'PIN_TAKEN') step.value = 'new';
   } finally {
     saving.value = false;
   }
@@ -79,9 +79,14 @@ async function onComplete(pin: string) {
           <Icon name="arrowLeft" :size="20" :stroke="2.25" /> Cancelar
         </button>
       </div>
-      <Avatar :person="person" size="xl" class="hello-avatar mt-8 lg:mt-12" />
+      <span
+        class="hello-avatar mt-8 grid size-[120px] place-items-center rounded-full bg-brand-100 text-brand-600 lg:mt-12"
+        aria-hidden="true"
+      >
+        <Icon name="key" :size="56" :stroke="1.75" />
+      </span>
       <h1 class="mt-5 text-4xl font-black tracking-tight text-ink-900 sm:text-5xl">Cambiar mi PIN</h1>
-      <p class="mt-4 text-lg text-ink-500">{{ person.name }}, escribe en el teclado:</p>
+      <p class="mt-4 text-lg text-ink-500">Escribe en el teclado:</p>
       <ol class="mt-4 list-none space-y-2.5 p-0" aria-label="Pasos para cambiar el PIN">
         <li
           v-for="(s, index) in STEPS"
@@ -109,7 +114,7 @@ async function onComplete(pin: string) {
         </li>
       </ol>
       <p class="mt-6 text-sm text-ink-500 lg:mt-auto lg:pt-8">
-        Elige uno difícil de adivinar: nada de 1234 ni 1111.
+        Elige uno difícil de adivinar (nada de 1234 ni 1111) y que no tenga nadie más.
       </p>
     </section>
 

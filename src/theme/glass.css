@@ -14,20 +14,27 @@
   --ion-safe-area-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
   --ion-safe-area-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
 
-  /* Azul muy claro de los mockups (#EEF5FC) con manchas de color suaves para que el vidrio se note. */
+  /*
+   * Fondo con manchas de color de la marca (azul del logo, celeste, naranja y un toque verde): es lo que el
+   * vidrio desenfoca, así que tiene que tener color para que el efecto se note.
+   */
+  /* Mockups: degradado #EAF5FD → #D4E9F8 con manchas desenfocadas celestes y una naranja. */
   --app-background:
-    radial-gradient(42rem 30rem at -8% -12%, rgb(11 121 195 / 0.22), transparent 64%),
-    radial-gradient(38rem 28rem at 108% -6%, rgb(127 189 230 / 0.4), transparent 62%),
-    radial-gradient(40rem 32rem at 96% 108%, rgb(255 138 31 / 0.16), transparent 64%),
-    radial-gradient(34rem 26rem at -6% 104%, rgb(61 155 216 / 0.2), transparent 62%),
-    linear-gradient(160deg, #e8f2fb 0%, #eef5fc 55%, #f6f1ea 100%);
+    radial-gradient(22rem 22rem at 0% 0%, rgb(127 195 238 / 0.55), transparent 70%),
+    radial-gradient(20rem 20rem at 100% 48%, rgb(255 192 138 / 0.5), transparent 70%),
+    radial-gradient(22rem 22rem at 25% 100%, rgb(159 211 245 / 0.6), transparent 70%),
+    linear-gradient(165deg, #eaf5fd 0%, #d4e9f8 55%, #eef4f9 100%);
 
-  /* Las tarjetas de los mockups son blancas: aquí, blanco translúcido con desenfoque (vidrio). */
-  --glass-bg: rgb(255 255 255 / 0.66);
-  --glass-bg-strong: rgb(255 255 255 / 0.82);
-  --glass-border: rgb(217 230 240 / 0.95);
-  --glass-shadow: 0 10px 30px -16px rgb(7 59 94 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.8);
-  --glass-blur: 18px;
+  /*
+   * Vidrio: blanco translúcido en degradado (más claro arriba a la izquierda, como un reflejo), mucho
+   * desenfoque, borde blanco luminoso y brillo interior en el canto superior.
+   */
+  /* Mockups: blanco al 58–74 %, blur 16–22px saturate(160%), borde blanco al 85–95 %. */
+  --glass-bg: rgb(255 255 255 / 0.6);
+  --glass-bg-strong: rgb(255 255 255 / 0.74);
+  --glass-border: rgb(255 255 255 / 0.9);
+  --glass-shadow: 0 6px 18px rgb(7 59 94 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.9);
+  --glass-blur: 20px;
 
   /* Ionic: superficies translúcidas (el fondo lo pone cada página, ver más abajo). */
   --ion-toolbar-background: transparent;
@@ -87,6 +94,20 @@ ion-content:last-child {
   --padding-top: var(--ion-safe-area-top);
 }
 
+/* Franja fija detrás de la barra de estado (solo ocupa algo donde hay área segura arriba, p. ej. Android). */
+.status-bar-scrim {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--ion-safe-area-top);
+  pointer-events: none;
+  background: rgb(234 245 253 / 0.86);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
 /* --- Cabeceras y barras ------------------------------------------------------------------------- */
 
 ion-header.glass-header {
@@ -107,6 +128,10 @@ ion-header.glass-header ion-toolbar {
 
 ion-menu {
   --background: var(--glass-bg-strong);
+}
+/* Fijo al lado del contenido (escritorio): vidrio más transparente; desplegado sobre el contenido, el fuerte. */
+ion-menu.menu-pane-visible {
+  --background: var(--glass-bg);
 }
 ion-menu::part(container) {
   border-right: 1px solid var(--glass-border);

@@ -6,6 +6,7 @@ import { ApiError, errorMessage } from '@/services/errors';
 import { useToastStore } from '@/stores/toasts';
 import BaseDialog from './ui/BaseDialog.vue';
 import FormField from './ui/FormField.vue';
+import SpinnerLabel from './ui/SpinnerLabel.vue';
 
 /** Registrar o editar un administrador (cuenta con email + contraseña). */
 const props = defineProps<{ open: boolean; user: User | null }>();
@@ -74,7 +75,11 @@ async function submit() {
     @close="emit('close')"
   >
     <form class="space-y-4" novalidate @submit.prevent="submit">
-      <p v-if="error" class="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700" role="alert">
+      <p
+        v-if="error"
+        class="rounded-[14px] border border-danger-200 bg-danger-50 px-3 py-2 text-[13px] text-danger-700"
+        role="alert"
+      >
         {{ error }}
       </p>
       <div class="grid gap-4 sm:grid-cols-2">
@@ -124,16 +129,20 @@ async function submit() {
           autocomplete="new-password"
         />
       </FormField>
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" class="btn-secondary" :disabled="saving" @click="emit('close')">
+      <p v-if="!isEdit" class="rounded-[14px] bg-white/55 px-3 py-2 text-xs text-ink-500">
+        Su código para entrar desde la máquina lo pone cada administrador en Más → Cambiar código.
+      </p>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" class="btn-secondary min-h-11" :disabled="saving" @click="emit('close')">
           Cancelar
         </button>
         <button
           type="submit"
-          class="btn-primary"
+          class="btn-primary min-h-11"
           :disabled="saving || !form.name || !form.lastname || !form.email || (!isEdit && !form.password)"
+          :aria-busy="saving"
         >
-          {{ saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Agregar' }}
+          <SpinnerLabel :busy="saving" :label="isEdit ? 'Guardar cambios' : 'Agregar'" :size="16" />
         </button>
       </div>
     </form>

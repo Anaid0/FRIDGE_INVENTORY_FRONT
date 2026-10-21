@@ -1,6 +1,21 @@
 import type { KeyValueStore } from '@/native/keyValueStore';
 
 export const SERVER_URL_KEY = 'fridgeya.serverUrl';
+/** Con qué dirección de fábrica se guardó la del usuario: si el APK trae otra, la guardada se descarta. */
+export const SERVER_PRESET_KEY = 'fridgeya.serverUrl.preset';
+
+/**
+ * Cabeceras extra según el servidor. Los túneles de desarrollo de VS Code (*.devtunnels.ms) muestran una
+ * página de aviso antes de dejar pasar; con esta cabecera la API responde directo.
+ */
+export function serverHeaders(apiUrl: string | undefined): Record<string, string> {
+  try {
+    const host = new URL(apiUrl ?? '').hostname;
+    return host.endsWith('.devtunnels.ms') ? { 'X-Tunnel-Skip-AntiPhishing-Page': 'true' } : {};
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Dirección de la API escrita por el usuario → URL base normalizada que termina en /api.
@@ -34,7 +49,10 @@ export async function checkServer(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetchImpl(`${apiUrl}/health`, { signal: controller.signal });
+    const response = await fetchImpl(`${apiUrl}/health`, {
+      signal: controller.signal,
+      headers: serverHeaders(apiUrl),
+    });
     const body = (await response.json().catch(() => null)) as { status?: string; database?: boolean } | null;
     // /api/health responde 503 con database:false si el servidor no llega a MySQL: mensaje específico.
     if (body?.status !== undefined && body.database === false) {
@@ -65,26 +83,38 @@ export interface ServerConfig {
 
 /**
  * - Navegador: la API vive junto a la web (`/api`, o VITE_API_URL); no hay nada que configurar.
- * - Android (Capacitor): la app no tiene servidor propio; la dirección se pide la primera vez y se guarda.
+ * - Android (Capacitor): la app no tiene servidor propio. Si el APK trae una dirección de fábrica
+ *   (`presetUrl`, de VITE_NATIVE_API_URL) se usa directamente; si no, se pide la primera vez y se guarda.
+ *   "Cambiar servidor" sigue funcionando: lo que guarde el usuario gana hasta que llegue un APK con otra
+ *   dirección de fábrica.
  */
 export function createServerConfig(options: {
   configurable: boolean;
   store: KeyValueStore;
   defaultUrl: string;
+  presetUrl?: string | null;
 }): ServerConfig {
+  const preset = options.presetUrl ?? null;
   let stored: string | null = null;
   const listeners: ((apiUrl: string) => void)[] = [];
   return {
     configurable: options.configurable,
     async load() {
-      stored = options.configurable ? await options.store.get(SERVER_URL_KEY).catch(() => null) : null;
+      if (!options.configurable) return;
+      const [url, savedWith] = await Promise.all([
+        options.store.get(SERVER_URL_KEY).catch(() => null),
+        options.store.get(SERVER_PRESET_KEY).catch(() => null),
+      ]);
+      // Una dirección guardada con otro APK (otra dirección de fábrica, o ninguna) ya no vale.
+      stored = preset && savedWith !== preset ? null : url;
     },
-    needsSetup: () => options.configurable && !stored,
-    apiUrl: () => stored ?? options.defaultUrl,
-    storedUrl: () => stored,
+    needsSetup: () => options.configurable && !stored && !preset,
+    apiUrl: () => stored ?? (options.configurable ? preset : null) ?? options.defaultUrl,
+    storedUrl: () => stored ?? (options.configurable ? preset : null),
     async save(apiUrl) {
       stored = apiUrl;
       await options.store.set(SERVER_URL_KEY, apiUrl);
+      await options.store.set(SERVER_PRESET_KEY, preset ?? '');
       for (const listener of listeners) listener(apiUrl);
     },
     onChange(listener) {

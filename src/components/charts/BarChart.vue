@@ -13,7 +13,7 @@ export interface BarRow {
 
 /**
  * Barras horizontales de una sola serie (magnitud por entidad).
- * - Marcas: <= 16px de grosor, punta redondeada 4px, base recta en la línea base.
+ * - Marcas: barra de 10px con puntas redondas sobre un riel suave (como las barras del ranking de los mockups).
  * - `emphasizeKey`: énfasis (esa barra en el acento, el resto en gris de contexto).
  * - Valor en la punta (texto en tokens de texto, nunca del color de la serie).
  * - Hover y foco muestran el mismo tooltip; una tabla oculta da acceso sin color ni hover.
@@ -50,7 +50,7 @@ function fill(row: BarRow): string {
       <li
         v-for="row in rows"
         :key="row.key"
-        class="group relative grid grid-cols-[minmax(0,9rem)_1fr] items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-300 sm:grid-cols-[minmax(0,11rem)_1fr]"
+        class="group relative grid grid-cols-1 items-center gap-x-3 gap-y-0.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-300 sm:grid-cols-[minmax(0,11rem)_1fr]"
         tabindex="0"
         :aria-label="`${row.label}: ${row.valueLabel}${row.detail ? `, ${row.detail}` : ''}`"
         @pointerenter="active = row.key"
@@ -58,13 +58,16 @@ function fill(row: BarRow): string {
         @focus="active = row.key"
         @blur="active = null"
       >
-        <span class="truncate text-sm text-ink-700" :title="row.label">{{ row.label }}</span>
+        <span class="truncate text-[13px] font-bold text-ink-900" :title="row.label">{{ row.label }}</span>
         <span class="flex min-w-0 items-center gap-2 py-1">
-          <span
-            class="h-4 rounded-r-[4px] transition-[width,background-color] duration-300"
-            :style="{ width: width(row.value), backgroundColor: fill(row) }"
-          />
-          <span class="text-sm font-medium whitespace-nowrap text-ink-800 tabular-nums">{{
+          <span class="flex h-2.5 min-w-0 flex-1 items-center rounded-full bg-ink-900/6">
+            <span
+              data-bar
+              class="h-2.5 rounded-full transition-[width,background-color] duration-300"
+              :style="{ width: width(row.value), backgroundColor: fill(row) }"
+            />
+          </span>
+          <span class="num shrink-0 text-right text-[13px] whitespace-nowrap text-ink-900">{{
             row.valueLabel
           }}</span>
         </span>

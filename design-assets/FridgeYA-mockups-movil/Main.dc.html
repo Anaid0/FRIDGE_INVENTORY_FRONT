@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>FridgeYA · Máquina</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&amp;family=Nunito+Sans:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6AAB}a:hover{color:#073B5E}
+.fy-k{transition:transform .08s ease, background-color .12s ease}
+.fy-k:active{transform:scale(.94)}
+.fy-k:disabled{opacity:.4}
+.fy-scroll::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; background: linear-gradient(165deg, #EAF5FD 0%, #D4E9F8 55%, #EEF4F9 100%); font-family: 'Nunito Sans', system-ui, sans-serif; color: #1E3A50; font-size: 13px">
+<div aria-hidden="true" style="position: absolute; width: 300px; height: 300px; left: -110px; top: -90px; border-radius: 50%; background: #7FC3EE; opacity: 0.55; filter: blur(60px)"></div>
+<div aria-hidden="true" style="position: absolute; width: 260px; height: 260px; right: -110px; top: 330px; border-radius: 50%; background: #FFC08A; opacity: 0.5; filter: blur(64px)"></div>
+<div aria-hidden="true" style="position: absolute; width: 280px; height: 280px; left: 20px; bottom: -150px; border-radius: 50%; background: #9FD3F5; opacity: 0.6; filter: blur(60px)"></div>
+
+<div style="position: relative; height: 100%; box-sizing: border-box; padding: 50px 14px 30px; display: flex; flex-direction: column; gap: 8px">
+
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg width="30" height="30" viewBox="0 0 400 400" role="img" aria-label="FridgeYA"><rect width="400" height="400" rx="92" fill="#0b79c3"></rect><g transform="translate(168,6) scale(0.62)"><circle cx="28" cy="100" r="31" fill="#fff"></circle><circle cx="172" cy="100" r="31" fill="#fff"></circle><circle cx="100" cy="100" r="81" fill="#fff"></circle><circle cx="28" cy="100" r="24" fill="#0b79c3"></circle><circle cx="172" cy="100" r="24" fill="#0b79c3"></circle><circle cx="100" cy="100" r="74" fill="#0b79c3"></circle><circle cx="78" cy="90" r="28" fill="#fff"></circle><circle cx="122" cy="90" r="28" fill="#fff"></circle><ellipse cx="100" cy="128" rx="40" ry="32" fill="#fff"></ellipse><circle cx="80" cy="90" r="11" fill="#073b5e"></circle><circle cx="120" cy="90" r="11" fill="#073b5e"></circle></g><rect x="96" y="96" width="208" height="262" rx="30" fill="#fff"></rect><line x1="96" y1="178" x2="304" y2="178" stroke="#0b79c3" stroke-width="14"></line><circle cx="292" cy="330" r="42" fill="#ff8a1f" stroke="#0b79c3" stroke-width="10"></circle></svg>
+<span style="font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900; color: #073B5E; letter-spacing: -0.4px">Fridge<span style="color: #0B79C3">YA</span></span>
+</div>
+<div style="display: flex; align-items: center; gap: 6px">
+<a href="Ranking.dc.html" aria-label="Quien más retira: David Ospino, 7 unidades. Ver ranking" style="height: 40px; box-sizing: border-box; padding: 0 10px 0 3px; border-radius: 999px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 4px 14px rgba(7,59,94,0.08); display: flex; align-items: center; gap: 6px; text-decoration: none">
+<span style="width: 32px; height: 32px; border-radius: 50%; background: #FFE2C4; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 18 200 164" aria-hidden="true"><circle cx="28" cy="100" r="24" fill="#0b79c3"></circle><circle cx="172" cy="100" r="24" fill="#0b79c3"></circle><circle cx="100" cy="100" r="74" fill="#0b79c3"></circle><circle cx="78" cy="90" r="28" fill="#fff"></circle><circle cx="122" cy="90" r="28" fill="#fff"></circle><ellipse cx="100" cy="128" rx="40" ry="32" fill="#fff"></ellipse><circle cx="80" cy="90" r="11" fill="#073b5e"></circle><circle cx="120" cy="90" r="11" fill="#073b5e"></circle><ellipse cx="100" cy="136" rx="18" ry="14" fill="#073b5e"></ellipse></svg></span>
+<span style="display: flex; flex-direction: column; line-height: 1.05"><span style="font-size: 10px; font-weight: 700; color: #4F6B80">Más retira</span><span style="font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 900; color: #073B5E">David O. · <span style="color: #A34C00">7</span></span></span>
+</a>
+<a href="Historial.dc.html" aria-label="Historial" style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 50%; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); color: #2C4A60; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></a>
+</div>
+</header>
+
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 4px">
+<h1 style="margin: 0; font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900; color: #073B5E">¿Qué vas a retirar?</h1>
+<span style="font-size: 11px; font-weight: 700; color: #4F6B80">Puedes llevar varios</span>
+</div>
+
+<section aria-label="Máquina de productos" style="border-radius: 22px; padding: 7px; background: linear-gradient(180deg, #0A4A75 0%, #073B5E 60%, #06304D 100%); box-shadow: 0 12px 30px rgba(7,59,94,0.28), inset 0 1px 0 rgba(255,255,255,0.18); display: flex; flex-direction: column; gap: 6px">
+<div style="border-radius: 16px; padding: 7px 7px 5px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.16); display: flex; flex-direction: column; gap: 5px">
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<button type="button" class="fy-k" onClick="{{pick.c11}}" aria-label="Agregar Agua, código 11" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.94); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c11}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #FF8A1F; box-shadow: 0 0 0 4px rgba(255,138,31,0.35)"></span></sc-if>
+<sc-if value="{{cnt.c11}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #FF8A1F; border: 2px solid #073B5E; color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{cnt.c11}}</span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><rect x="15" y="3" width="10" height="5" rx="1.5" fill="#0B79C3"></rect><path d="M13 13 Q13 9 17 9 H23 Q27 9 27 13 V34 Q27 37 24 37 H16 Q13 37 13 34 Z" fill="#DDF0FB" stroke="#0B79C3" stroke-width="2"></path><rect x="13" y="19" width="14" height="7" fill="#7FBDE6"></rect></svg>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #073B5E; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Agua</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #073B5E; color: #FFFFFF">11</span><span style="font-size: 10px; font-weight: 800; color: #A34C00">{{left.c11}}</span></span>
+</button>
+<button type="button" class="fy-k" onClick="{{pick.c12}}" aria-label="Agregar Chocorramo, código 12" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.94); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c12}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #FF8A1F; box-shadow: 0 0 0 4px rgba(255,138,31,0.35)"></span></sc-if>
+<sc-if value="{{cnt.c12}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #FF8A1F; border: 2px solid #073B5E; color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{cnt.c12}}</span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><rect x="4" y="12" width="32" height="17" rx="4" fill="#FF8A1F" stroke="#B35400" stroke-width="2"></rect><rect x="10" y="16" width="20" height="9" rx="2" fill="#6B3A12"></rect><path d="M14 20.5h12" stroke="#FFC93C" stroke-width="2" stroke-linecap="round"></path></svg>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #073B5E; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Chocorramo</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #073B5E; color: #FFFFFF">12</span><span style="font-size: 10px; font-weight: 700; color: #4F6B80">{{left.c12}}</span></span>
+</button>
+<button type="button" class="fy-k" onClick="{{pick.c13}}" aria-label="Agregar Club Social Galletas, código 13" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.94); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c13}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #FF8A1F; box-shadow: 0 0 0 4px rgba(255,138,31,0.35)"></span></sc-if>
+<sc-if value="{{cnt.c13}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #FF8A1F; border: 2px solid #073B5E; color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{cnt.c13}}</span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="12" width="34" height="16" rx="3" fill="#0B79C3"></rect><rect x="7" y="15" width="11" height="10" rx="2" fill="#FFC93C"></rect><circle cx="10" cy="18" r="1" fill="#B35400"></circle><circle cx="15" cy="18" r="1" fill="#B35400"></circle><circle cx="12.5" cy="22" r="1" fill="#B35400"></circle><path d="M22 18h11M22 22h8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"></path></svg>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #073B5E; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Club Social Galletas</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #073B5E; color: #FFFFFF">13</span><span style="font-size: 10px; font-weight: 700; color: #4F6B80">{{left.c13}}</span></span>
+</button>
+<button type="button" class="fy-k" onClick="{{pick.c14}}" aria-label="Agregar Coca cola Zero 250ml, código 14" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.94); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c14}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #FF8A1F; box-shadow: 0 0 0 4px rgba(255,138,31,0.35)"></span></sc-if>
+<sc-if value="{{cnt.c14}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #FF8A1F; border: 2px solid #073B5E; color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{cnt.c14}}</span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="4" width="14" height="3" rx="1.5" fill="#9AA7B1"></rect><rect x="12" y="6" width="16" height="31" rx="4" fill="#26323B"></rect><path d="M12 19 q8 -4 16 0 v5 q-8 -4 -16 0 z" fill="#E84A5F"></path></svg>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #073B5E; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Coca cola Zero 250ml</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #073B5E; color: #FFFFFF">14</span><span style="font-size: 10px; font-weight: 700; color: #4F6B80">{{left.c14}}</span></span>
+</button>
+</div>
+<div aria-hidden="true" style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.22)"></div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<button type="button" class="fy-k" onClick="{{pick.c21}}" aria-label="Agregar Coca cola 250ml, código 21" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.94); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c21}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #FF8A1F; box-shadow: 0 0 0 4px rgba(255,138,31,0.35)"></span></sc-if>
+<sc-if value="{{cnt.c21}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #FF8A1F; border: 2px solid #073B5E; color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{cnt.c21}}</span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><rect x="13" y="4" width="14" height="3" rx="1.5" fill="#9AA7B1"></rect><rect x="12" y="6" width="16" height="31" rx="4" fill="#E23D4F"></rect><path d="M12 19 q8 -4 16 0 v4 q-8 -4 -16 0 z" fill="#FFFFFF"></path></svg>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #073B5E; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Coca cola 250ml</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #073B5E; color: #FFFFFF">21</span><span style="font-size: 10px; font-weight: 700; color: #4F6B80">{{left.c21}}</span></span>
+</button>
+<button type="button" class="fy-k" onClick="{{pick.c22}}" aria-label="Guaro, código 22, agotado" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.55); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c22}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #E05A4B; box-shadow: 0 0 0 4px rgba(224,90,75,0.3)"></span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true" style="opacity: 0.45"><rect x="17" y="2" width="6" height="5" rx="1" fill="#E23D4F"></rect><path d="M17.5 7 h5 v6 l4 4 v18 q0 3 -3 3 h-7 q-3 0 -3 -3 v-18 l4 -4z" fill="#EAF6FC" stroke="#7FBDE6" stroke-width="2"></path><rect x="14" y="22" width="12" height="8" rx="1" fill="#E23D4F"></rect></svg>
+<span style="position: absolute; top: 24px; left: 4px; right: 4px; height: 18px; border-radius: 5px; background: #073B5E; color: #FFFFFF; font-size: 9px; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; justify-content: center">AGOTADO</span>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #4F6B80; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Guaro</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #8FA3B3; color: #FFFFFF">22</span><span style="font-size: 10px; font-weight: 700; color: #4F6B80">0 disp.</span></span>
+</button>
+<button type="button" class="fy-k" onClick="{{pick.c23}}" aria-label="Agregar Leche de chocolate, código 23" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.94); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c23}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #FF8A1F; box-shadow: 0 0 0 4px rgba(255,138,31,0.35)"></span></sc-if>
+<sc-if value="{{cnt.c23}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #FF8A1F; border: 2px solid #073B5E; color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{cnt.c23}}</span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><path d="M12 13 L15 6 H25 L28 13 V36 H12 Z" fill="#8B5A2B"></path><path d="M12 13 H28" stroke="#6B3A12" stroke-width="2"></path><rect x="15" y="18" width="10" height="10" rx="2" fill="#FFFFFF"></rect><circle cx="20" cy="23" r="2.5" fill="#8B5A2B"></circle></svg>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #073B5E; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Leche de chocolate</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #073B5E; color: #FFFFFF">23</span><span style="font-size: 10px; font-weight: 700; color: #4F6B80">{{left.c23}}</span></span>
+</button>
+<button type="button" class="fy-k" onClick="{{pick.c24}}" aria-label="Agregar Leche Semidescremada, código 24" style="position: relative; height: 92px; box-sizing: border-box; padding: 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.94); display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: inherit; cursor: pointer">
+<sc-if value="{{sel.c24}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="position: absolute; inset: -3px; border-radius: 14px; border: 2px solid #FF8A1F; box-shadow: 0 0 0 4px rgba(255,138,31,0.35)"></span></sc-if>
+<sc-if value="{{cnt.c24}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; box-sizing: border-box; padding: 0 5px; border-radius: 999px; background: #FF8A1F; border: 2px solid #073B5E; color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{cnt.c24}}</span></sc-if>
+<svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><path d="M12 13 L15 6 H25 L28 13 V36 H12 Z" fill="#FFFFFF" stroke="#0B79C3" stroke-width="2" stroke-linejoin="round"></path><path d="M12 13 H28" stroke="#0B79C3" stroke-width="2"></path><path d="M12 24 q8 -4 16 0 V36 H12Z" fill="#7FBDE6"></path></svg>
+<span style="font-size: 11px; font-weight: 800; line-height: 1.15; color: #073B5E; text-align: center; max-height: 26px; overflow: hidden; hyphens: auto; overflow-wrap: anywhere">Leche Semidescremada</span>
+<span style="width: 100%; display: flex; justify-content: space-between; align-items: center"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; padding: 1px 4px; border-radius: 5px; background: #073B5E; color: #FFFFFF">24</span><span style="font-size: 10px; font-weight: 700; color: #4F6B80">{{left.c24}}</span></span>
+</button>
+</div>
+<div aria-hidden="true" style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.22)"></div>
+</div>
+
+<div style="position: relative; height: 46px; border-radius: 14px; background: rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 6px 12px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center">
+<svg width="66" height="56" viewBox="0 0 220 186" aria-hidden="true" style="position: absolute; left: 6px; bottom: 0">
+<circle cx="40" cy="96" r="24" fill="#0b79c3"></circle><circle cx="40" cy="96" r="11" fill="#ffffff"></circle><circle cx="184" cy="96" r="24" fill="#0b79c3"></circle><circle cx="184" cy="96" r="11" fill="#ffffff"></circle>
+<circle cx="112" cy="100" r="74" fill="#0b79c3"></circle>
+<circle cx="90" cy="90" r="28" fill="#ffffff"></circle><circle cx="134" cy="90" r="28" fill="#ffffff"></circle><ellipse cx="112" cy="128" rx="40" ry="32" fill="#ffffff"></ellipse>
+<circle cx="96" cy="88" r="10" fill="#073b5e"></circle><circle cx="140" cy="88" r="10" fill="#073b5e"></circle><circle cx="99" cy="85" r="3" fill="#ffffff"></circle><circle cx="143" cy="85" r="3" fill="#ffffff"></circle>
+<path d="M94 130 Q112 146 130 130" stroke="#0b79c3" stroke-width="6" fill="none" stroke-linecap="round"></path>
+<path d="M170 170 Q196 160 214 140" stroke="#0b79c3" stroke-width="20" fill="none" stroke-linecap="round"></path>
+<circle cx="214" cy="138" r="13" fill="#0b79c3"></circle>
+</svg>
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: #9FD3F5; padding-left: 40px">RETIRA AQUÍ</span>
+</div>
+</section>
+
+<section aria-label="Tu retiro" style="min-height: 46px; box-sizing: border-box; padding: 5px 5px 5px 8px; border-radius: 16px; background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.9); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 6px 18px rgba(7,59,94,0.08); display: flex; align-items: center; gap: 6px">
+<sc-if value="{{hasItems}}" hint-placeholder-val="{{true}}">
+<div class="fy-scroll" style="flex-grow: 1; min-width: 0; display: flex; gap: 5px; overflow-x: auto">
+<sc-for list="{{cart}}" as="it" hint-placeholder-count="2">
+<span style="flex-shrink: 0; height: 34px; box-sizing: border-box; padding: 0 2px 0 9px; border-radius: 999px; background: #FFFFFF; border: 1px solid #FFCF9E; display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: #073B5E; white-space: nowrap"><span style="font-family: 'JetBrains Mono', monospace; color: #A34C00">{{it.n}}×</span>{{it.name}}<button type="button" aria-label="{{it.aria}}" onClick="{{it.remove}}" style="width: 30px; height: 30px; border-radius: 50%; border: 0; background: transparent; color: #4F6B80; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></span>
+</sc-for>
+</div>
+<sc-if value="{{canRetirar}}" hint-placeholder-val="{{true}}"><button type="button" class="fy-k" onClick="{{toPin}}" style="flex-shrink: 0; height: 36px; padding: 0 12px; border-radius: 12px; border: 0; background: #FF8A1F; color: #073B5E; box-shadow: 0 4px 12px rgba(255,138,31,0.35); font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 900; cursor: pointer">Retirar · {{total}}</button></sc-if>
+<sc-if value="{{inPin}}" hint-placeholder-val="{{false}}"><span style="flex-shrink: 0; padding-right: 6px; font-size: 11px; font-weight: 800; color: #157A4B">{{total}} · falta tu PIN</span></sc-if>
+</sc-if>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><span style="padding: 0 4px; font-size: 12px; color: #4F6B80">Tu retiro está vacío · toca lo que vas a llevar</span></sc-if>
+</section>
+
+<section aria-label="Teclado" style="padding: 9px; border-radius: 22px; background: rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.85); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); box-shadow: 0 10px 28px rgba(7,59,94,0.12), inset 0 1px 0 rgba(255,255,255,0.9); display: flex; flex-direction: column; gap: 7px">
+<div aria-live="polite" style="min-height: 58px; box-sizing: border-box; border-radius: 14px; background: #06304D; box-shadow: inset 0 2px 8px rgba(0,0,0,0.35); padding: 6px 8px 6px 12px; display: flex; align-items: center; gap: 8px">
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #9FD3F5">{{label}}<sc-if value="{{showLock}}" hint-placeholder-val="{{true}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6E93AE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Los administradores también entran escribiendo su código"><rect x="4.5" y="10.5" width="15" height="10" rx="2"></rect><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"></path></svg></sc-if></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 800; letter-spacing: 3px; color: #FFB46B; line-height: 1.15">{{big}}</span>
+<sc-if value="{{subOk}}" hint-placeholder-val="{{true}}"><span style="font-size: 12px; font-weight: 700; color: #E2EEF7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sub}}</span></sc-if>
+<sc-if value="{{subErr}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; font-weight: 800; color: #FF9C8F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sub}}</span></sc-if>
+</div>
+<sc-if value="{{showQty}}" hint-placeholder-val="{{false}}">
+<div style="flex-shrink: 0; display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,0.08)">
+<button type="button" class="fy-k" aria-label="Una unidad menos" onClick="{{dec}}" style="width: 40px; height: 40px; border-radius: 10px; border: 0; background: rgba(255,255,255,0.12); color: #FFFFFF; font: inherit; font-size: 20px; font-weight: 800; cursor: pointer">−</button>
+<span style="width: 24px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: #FFFFFF">{{qty}}</span>
+<button type="button" class="fy-k" aria-label="Una unidad más" onClick="{{inc}}" disabled="{{atMax}}" style="width: 40px; height: 40px; border-radius: 10px; border: 0; background: rgba(255,255,255,0.12); color: #FFFFFF; font: inherit; font-size: 20px; font-weight: 800; cursor: pointer">+</button>
+</div>
+</sc-if>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 46px; gap: 6px">
+<button type="button" class="fy-k" onClick="{{key.d1}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">1</button>
+<button type="button" class="fy-k" onClick="{{key.d2}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">2</button>
+<button type="button" class="fy-k" onClick="{{key.d3}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">3</button>
+<button type="button" class="fy-k" aria-label="Borrar el último dígito" onClick="{{back}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.7); background: rgba(7,59,94,0.07); color: #2C4A60; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"></path><path d="M17 9l-6 6M11 9l6 6"></path></svg></button>
+<button type="button" class="fy-k" onClick="{{key.d4}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">4</button>
+<button type="button" class="fy-k" onClick="{{key.d5}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">5</button>
+<button type="button" class="fy-k" onClick="{{key.d6}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">6</button>
+<button type="button" class="fy-k" aria-label="Limpiar el código" onClick="{{clear}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.7); background: rgba(7,59,94,0.07); color: #2C4A60; font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">C</button>
+<button type="button" class="fy-k" onClick="{{key.d7}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">7</button>
+<button type="button" class="fy-k" onClick="{{key.d8}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">8</button>
+<button type="button" class="fy-k" onClick="{{key.d9}}" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">9</button>
+<sc-if value="{{okEntrega}}" hint-placeholder-val="{{false}}"><a href="Entrega.dc.html" style="grid-row: span 2; border-radius: 12px; background: #FF8A1F; color: #073B5E; box-shadow: 0 6px 16px rgba(255,138,31,0.35); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900">OK<span style="font-size: 10px; font-weight: 800">Retirar</span></a></sc-if>
+<sc-if value="{{okAdmin}}" hint-placeholder-val="{{false}}"><a href="AdminInicio.dc.html" style="grid-row: span 2; border-radius: 12px; background: #073B5E; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900">OK<span style="font-size: 10px; font-weight: 800">Entrar</span></a></sc-if>
+<sc-if value="{{okButton}}" hint-placeholder-val="{{true}}"><button type="button" class="fy-k" onClick="{{ok}}" disabled="{{okDisabled}}" style="grid-row: span 2; border-radius: 12px; border: 0; background: #FF8A1F; color: #073B5E; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900; cursor: pointer">OK<span style="font-size: 10px; font-weight: 800">{{okHint}}</span></button></sc-if>
+<button type="button" class="fy-k" onClick="{{key.d0}}" style="grid-column: span 3; border-radius: 12px; border: 1px solid rgba(255,255,255,0.95); background: rgba(255,255,255,0.78); box-shadow: 0 1px 2px rgba(7,59,94,0.10); color: #073B5E; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; cursor: pointer">0</button>
+</div>
+</section>
+</div>
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; left: 14px; right: 14px; top: 98px; min-height: 44px; box-sizing: border-box; padding: 8px 12px; border-radius: 14px; background: rgba(255,255,255,0.88); border: 1px solid rgba(255,255,255,0.95); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 10px 26px rgba(7,59,94,0.18); display: flex; align-items: center; gap: 10px">
+<span style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #157A4B; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+<span style="flex-grow: 1; font-size: 12px; color: #1E3A50"><strong style="color: #073B5E">David</strong> retiró 2 Coca cola 250ml y 1 Chocorramo · llevas 10 esta quincena</span>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["inicio","pin","error","regreso","admin"],"default":"inicio"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const P = [
+{ c: '11', n: 'Agua', s: 1 },
+{ c: '12', n: 'Chocorramo', s: 11 },
+{ c: '13', n: 'Club Social Galletas', s: 18 },
+{ c: '14', n: 'Coca cola Zero 250ml', s: 4 },
+{ c: '21', n: 'Coca cola 250ml', s: 9 },
+{ c: '22', n: 'Guaro', s: 0 },
+{ c: '23', n: 'Leche de chocolate', s: 11 },
+{ c: '24', n: 'Leche Semidescremada', s: 6 }
+];
+const demoCart = { '21': 2, '12': 1 };
+const presets = {
+inicio: { cart: demoCart },
+pin: { cart: demoCart, step: 'pin', pin: '12' },
+error: { cart: demoCart, step: 'pin', pin: '', pinError: true },
+regreso: { toast: true },
+admin: { code: '482915' }
+};
+const base = { code: '', pin: '', step: 'codigo', qty: 1, cart: {}, toast: false, pinError: false, msg: '' };
+const st = Object.assign({}, base, presets[this.props.estado || 'inicio'] || {}, this.state || {});
+const set = (o) => this.setState(Object.assign({}, st, o));
+const find = (c) => P.find(p => p.c === c) || null;
+const inCart = (c) => st.cart[c] || 0;
+const leftOf = (p) => p.s - inCart(p.c);
+const add = (p, n) => {
+if (p.s === 0) { set({ msg: p.n + ' está agotado', code: '', step: 'codigo', toast: false }); return; }
+const l = leftOf(p);
+if (l <= 0) { set({ msg: 'Ya tienes todos los ' + p.n + ' disponibles', code: '', step: 'codigo', toast: false }); return; }
+const cart = Object.assign({}, st.cart);
+cart[p.c] = inCart(p.c) + Math.min(n, l);
+set({ cart: cart, code: '', qty: 1, msg: '', step: 'codigo', pin: '', pinError: false, toast: false });
+};
+const admin = st.step === 'codigo' && st.code.length > 2;
+const prod = (!admin && st.code.length === 2) ? find(st.code) : null;
+let err = '';
+if (st.step === 'codigo' && st.code.length === 2 && !prod) err = 'El código ' + st.code + ' no existe';
+else if (prod && prod.s === 0) err = prod.n + ' está agotado';
+else if (prod && leftOf(prod) <= 0) err = 'Ya tienes todos los ' + prod.n + ' disponibles';
+const valid = !!prod && !err;
+const items = Object.keys(st.cart).filter(c => st.cart[c] > 0).map(c => {
+const p = find(c);
+return { n: st.cart[c], name: p.n, aria: 'Quitar ' + p.n + ' del retiro', remove: () => { const nc = Object.assign({}, st.cart); delete nc[c]; set({ cart: nc, step: 'codigo', pin: '', pinError: false }); } };
+});
+const total = items.reduce((a, i) => a + i.n, 0);
+const totalTxt = total + (total === 1 ? ' producto' : ' productos');
+let label = 'CÓDIGO', big = (st.code + '__').slice(0, 2).split('').join(' '), sub, isErr = false;
+if (st.step === 'pin') {
+label = 'TU PIN';
+big = [0, 1, 2, 3].map(i => i < st.pin.length ? '●' : '○').join(' ');
+if (st.pinError) { sub = 'PIN incorrecto · te quedan 4 intentos'; isErr = true; }
+else sub = totalTxt + ' · tu PIN te identifica';
+} else if (admin) {
+label = 'ADMINISTRADOR';
+big = st.code.split('').map(() => '●').join(' ');
+sub = 'Pulsa OK · se valida en el servidor';
+} else if (err) { sub = err; isErr = true; }
+else if (valid) sub = prod.n + ' · quedan ' + leftOf(prod) + ' · OK para agregar';
+else if (st.msg) { sub = st.msg; isErr = true; }
+else sub = total ? 'Agrega más o pulsa Retirar' : 'Toca un producto o marca su código';
+const digit = (d) => {
+if (st.step === 'pin') { if (st.pin.length < 4) set({ pin: st.pin + d, pinError: false }); }
+else if (st.code.length < 6) set({ code: st.code + d, qty: 1, msg: '', toast: false });
+};
+const key = {};
+['0','1','2','3','4','5','6','7','8','9'].forEach(d => { key['d' + d] = () => digit(d); });
+const pick = {}, sel = {}, cnt = {}, left = {};
+P.forEach(p => {
+pick['c' + p.c] = () => add(p, 1);
+sel['c' + p.c] = !!prod && prod.c === p.c;
+cnt['c' + p.c] = inCart(p.c);
+left['c' + p.c] = leftOf(p) + ' disp.';
+});
+const maxQ = valid ? leftOf(prod) : 1;
+const pinReady = st.step === 'pin' && st.pin.length === 4;
+const adminReady = admin && st.code.length >= 4;
+return {
+pick: pick, sel: sel, cnt: cnt, left: left, key: key,
+cart: items, total: total,
+hasItems: total > 0, empty: total === 0,
+canRetirar: total > 0 && st.step === 'codigo',
+inPin: st.step === 'pin',
+toPin: () => { if (total > 0) set({ step: 'pin', pin: '', code: '', msg: '', pinError: false }); },
+label: label, big: big, sub: sub,
+subOk: !isErr, subErr: isErr,
+showLock: st.code.length === 0 && st.step === 'codigo' && total === 0,
+showQty: valid,
+qty: st.qty, atMax: st.qty >= maxQ,
+inc: () => set({ qty: Math.min(maxQ, st.qty + 1) }),
+dec: () => set({ qty: Math.max(1, st.qty - 1) }),
+back: () => {
+if (st.step === 'pin') { if (st.pin.length) set({ pin: st.pin.slice(0, -1) }); else set({ step: 'codigo', pinError: false }); }
+else set({ code: st.code.slice(0, -1), msg: '' });
+},
+clear: () => set({ code: '', pin: '', qty: 1, msg: '', pinError: false, step: st.step }),
+ok: () => { if (st.step === 'codigo' && valid) add(prod, st.qty); },
+okEntrega: pinReady, okAdmin: adminReady,
+okButton: !pinReady && !adminReady,
+okDisabled: !(st.step === 'codigo' && valid),
+okHint: st.step === 'pin' ? 'Retirar' : 'Agregar',
+toast: st.toast
+};
+}
+}
+</script>
+</body>
+</html>

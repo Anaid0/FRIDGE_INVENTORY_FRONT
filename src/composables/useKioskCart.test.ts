@@ -5,6 +5,7 @@ import { MAX_CART_LINES, useKioskCart } from './useKioskCart';
 
 const product = (id: string, quantity: number, extra: Partial<Product> = {}): Product => ({
   id,
+  code: null,
   name: id,
   description: null,
   unit: 'unidad',

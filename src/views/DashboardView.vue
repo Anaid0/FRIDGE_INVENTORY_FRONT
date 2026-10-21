@@ -2,26 +2,19 @@
 import AdminPage from '@/layouts/AdminPage.vue';
 import { useOnEnter } from '@/composables/useOnEnter';
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
-import MovementTypeBadge from '@/components/MovementTypeBadge.vue';
-import PeriodBalanceCard from '@/components/PeriodBalanceCard.vue';
-import Badge from '@/components/ui/Badge.vue';
-import EmptyState from '@/components/ui/EmptyState.vue';
+import { RouterLink, useRouter } from 'vue-router';
 import ErrorState from '@/components/ui/ErrorState.vue';
 import Icon from '@/components/ui/Icon.vue';
-import ProductIcon from '@/components/ui/ProductIcon.vue';
-import StatTile from '@/components/ui/StatTile.vue';
 import { useAsync } from '@/composables/useAsync';
-import type { MovementView, Product, TopWithdrawer } from '@/domain/models';
+import type { MovementView, Product, PurchaseListItem, TopWithdrawer, UserRef } from '@/domain/models';
 import { useServices } from '@/services/container';
 import { useAuthStore } from '@/stores/auth';
-import { useLookupsStore } from '@/stores/lookups';
-import { startOfTodayISO } from '@/utils/dates';
-import { formatNumber, formatRelative, fullName, withUnit } from '@/utils/format';
+import { daysUntil, startOfTodayISO } from '@/utils/dates';
+import { formatMoney, formatNumber, formatRelative, fullName } from '@/utils/format';
 
-const { movements } = useServices();
+const { movements, purchases } = useServices();
 const auth = useAuthStore();
-const lookups = useLookupsStore();
+const router = useRouter();
 const { data, error, loading, run } = useAsync(() => movements.dashboard());
 
 /**
@@ -40,261 +33,458 @@ const withdrawalsToday = useAsync(
     (await movements.list({ type: 'OUT', source: 'MANUAL', from: startOfTodayISO(), pageSize: 1 })).total,
 );
 
+// Compras recientes: solo para mostrar el total ("Compra de 4 productos · $86.500") en los movimientos.
+const recentPurchases = useAsync(
+  async () =>
+    (await purchases.list({ pageSize: 10 }).catch(() => ({ items: [] as PurchaseListItem[] }))).items,
+);
+
 useOnEnter(() => {
   void run();
   void leaders.run();
   void withdrawalsToday.run();
-  void lookups.ensureCategories().catch(() => undefined);
+  void recentPurchases.run();
 });
 
-const today = computed(() =>
-  new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()),
-);
+/** "Lunes 19 de octubre". */
+const today = computed(() => {
+  const text = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+    .format(new Date())
+    .replace(',', '');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+});
+
+/** Salir: cierra la sesión de admin y vuelve a la máquina. */
+async function logout() {
+  auth.logout();
+  await router.replace('/');
+}
+
+/** "David O.": nombre y la inicial del apellido (filas cortas del mockup). */
+function shortName(user: UserRef): string {
+  return user.lastname ? `${user.name} ${user.lastname.charAt(0)}.` : user.name;
+}
+
+// --- Quincena actual ---
+const period = computed(() => data.value?.currentPeriod ?? null);
+const spentPercent = computed(() => {
+  if (!period.value) return 0;
+  const collected = Number(period.value.collected);
+  if (!collected) return Number(period.value.spent) > 0 ? 100 : 0;
+  return Math.round((Number(period.value.spent) / collected) * 100);
+});
+/** "Abierta · 12 días", "Abierta · termina hoy"; cerrada, "Cerrada". */
+const periodPill = computed(() => {
+  if (!period.value) return '';
+  if (period.value.status !== 'OPEN') return 'Cerrada';
+  const days = daysUntil(period.value.endDate);
+  if (days < 0) return 'Abierta · ya terminó';
+  if (days === 0) return 'Abierta · termina hoy';
+  return `Abierta · ${days} ${days === 1 ? 'día' : 'días'}`;
+});
+
+// --- Va ganando ---
 const leader = computed(() => leaders.data.value?.rows[0] ?? null);
-const chasers = computed(() => leaders.data.value?.rows.slice(1) ?? []);
 const leaderDetail = computed(() => {
   if (!leader.value) return '';
   const { totalWithdrawn, withdrawals } = leader.value;
-  const units = `${formatNumber(totalWithdrawn)} ${totalWithdrawn === 1 ? 'unidad' : 'unidades'}`;
-  const times = `${formatNumber(withdrawals)} ${withdrawals === 1 ? 'retiro' : 'retiros'}`;
-  const scope =
-    leaders.data.value?.scope === 'period'
-      ? (data.value?.currentPeriod?.name ?? 'esta quincena')
-      : 'desde siempre';
-  return `${units} en ${times} · ${scope}`;
+  return `${formatNumber(totalWithdrawn)} und. · ${formatNumber(withdrawals)} ${withdrawals === 1 ? 'retiro' : 'retiros'}`;
+});
+/** "2. Gerson B. 1 · 3. Diana V. 1". */
+const chasers = computed(() =>
+  (leaders.data.value?.rows.slice(1) ?? [])
+    .map((row, i) => `${i + 2}. ${shortName(row.user)} ${formatNumber(row.totalWithdrawn)}`)
+    .join(' · '),
+);
+
+// --- Por reponer ---
+const restock = computed(() => data.value?.lowStockProducts.slice(0, 4) ?? []);
+function restockLabel(p: Product): string {
+  return `${p.name}: ${p.quantity === 0 ? 'agotado' : `quedan ${p.quantity} de un mínimo de ${p.minStock}`}`;
+}
+
+// --- Últimos movimientos: las líneas de una misma compra se juntan en una sola fila ---
+type FeedRow =
+  | { kind: 'movement'; key: string; movement: MovementView }
+  | { kind: 'purchase'; key: string; purchaseId: string | null; lines: number; createdAt: string };
+
+const feed = computed<FeedRow[]>(() => {
+  const rows: FeedRow[] = [];
+  for (const m of data.value?.latestMovements ?? []) {
+    const last = rows[rows.length - 1];
+    if (m.source === 'PURCHASE') {
+      if (last?.kind === 'purchase' && last.purchaseId === m.purchaseId) last.lines += 1;
+      else
+        rows.push({
+          kind: 'purchase',
+          key: m.id,
+          purchaseId: m.purchaseId,
+          lines: 1,
+          createdAt: m.createdAt,
+        });
+    } else {
+      rows.push({ kind: 'movement', key: m.id, movement: m });
+    }
+  }
+  return rows.slice(0, 6);
 });
 
+function purchaseOf(id: string | null): PurchaseListItem | undefined {
+  return id ? recentPurchases.data.value?.find((p) => p.id === id) : undefined;
+}
+/** "de 4 productos · $86.500" (sin total si la compra no está entre las recientes). */
+function purchaseText(row: Extract<FeedRow, { kind: 'purchase' }>): string {
+  const purchase = purchaseOf(row.purchaseId);
+  const count = purchase?.itemsCount ?? row.lines;
+  const text = `de ${count} ${count === 1 ? 'producto' : 'productos'}`;
+  return purchase ? `${text} · ${formatMoney(purchase.total)}` : text;
+}
+
+/** "12 min", "1 h", "ayer": la hora relativa sin el "hace". */
+function when(value: string): string {
+  return formatRelative(value).replace(/^hace\s+/, '');
+}
+
+// --- Más retiros · 30 días ---
 const monthRows = computed(() => data.value?.topWithdrawers.last30Days.slice(0, 5) ?? []);
 const monthMax = computed(() => Math.max(1, ...monthRows.value.map((row) => row.totalWithdrawn)));
-
-function verb(m: MovementView): string {
-  if (m.source === 'PURCHASE') return 'compró';
-  return m.type === 'OUT' ? 'sacó' : 'metió';
-}
-
-/** "Queda 1 · mínimo 3"; con otra unidad, "Queda 1 botella · mínimo 2". */
-function remaining(p: Product): string {
-  const left = p.unit && p.unit !== 'unidad' ? withUnit(p.quantity, p.unit) : String(p.quantity);
-  return p.quantity === 0 ? `Agotado · mínimo ${p.minStock}` : `Queda ${left} · mínimo ${p.minStock}`;
-}
 </script>
 
 <template>
   <AdminPage title="Inicio">
-    <section>
-      <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-        <div>
-          <h1 class="page-title">Hola, {{ auth.user?.name }}</h1>
-          <p class="mt-1 text-base text-ink-500">Así está la nevera de la oficina hoy, {{ today }}.</p>
+    <div class="flex flex-col gap-2.5 lg:gap-4">
+      <header class="flex items-center gap-2.5">
+        <div class="flex min-w-0 flex-1 flex-col">
+          <span class="text-[11px] font-bold text-ink-500 lg:text-[13px]">{{ today }}</span>
+          <h1 class="page-title truncate">Hola, {{ auth.user?.name }}</h1>
         </div>
-        <div class="flex flex-wrap gap-2.5">
-          <RouterLink to="/admin/productos/nuevo" class="btn-secondary min-h-11 px-[18px]"
-            ><Icon name="plus" :size="18" :stroke="2" /> Nuevo producto</RouterLink
-          >
-          <RouterLink to="/admin/productos" class="btn-primary min-h-11 px-[18px]"
-            ><Icon name="arrowUpRight" :size="18" :stroke="2" /> Registrar movimiento</RouterLink
-          >
-        </div>
-      </div>
+        <button
+          type="button"
+          class="glass inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-xs font-extrabold text-ink-900 hover:bg-white"
+          @click="logout"
+        >
+          <Icon name="enter" :size="16" :stroke="2.4" /> Salir
+        </button>
+      </header>
+
+      <!-- Acciones rápidas -->
+      <nav class="grid grid-cols-3 gap-1.5 lg:gap-3" aria-label="Acciones rápidas">
+        <RouterLink
+          to="/admin/ingresar"
+          class="press flex h-14 flex-col items-center justify-center gap-0.5 rounded-[14px] bg-success-700 px-1 text-center text-[11px] font-extrabold text-white shadow-[0_6px_16px_rgb(21_122_75/0.25)] hover:bg-success-800 lg:h-16 lg:flex-row lg:gap-2 lg:text-sm"
+        >
+          <Icon name="putIn" :size="18" :stroke="2.6" /> Ingresar stock
+        </RouterLink>
+        <RouterLink
+          to="/admin/compras/nueva"
+          class="glass press flex h-14 flex-col items-center justify-center gap-0.5 rounded-[14px] px-1 text-center text-[11px] font-extrabold text-ink-900 hover:bg-white lg:h-16 lg:flex-row lg:gap-2 lg:text-sm"
+        >
+          <Icon name="bag" :size="18" :stroke="2.4" /> Registrar compra
+        </RouterLink>
+        <RouterLink
+          to="/admin/productos/nuevo"
+          class="glass press flex h-14 flex-col items-center justify-center gap-0.5 rounded-[14px] px-1 text-center text-[11px] font-extrabold text-ink-900 hover:bg-white lg:h-16 lg:flex-row lg:gap-2 lg:text-sm"
+        >
+          <Icon name="plus" :size="18" :stroke="2.6" /> Nuevo producto
+        </RouterLink>
+      </nav>
 
       <ErrorState v-if="error && !data" :message="error" @retry="run" />
 
-      <div v-else class="flex flex-col gap-6 transition-opacity" :class="{ 'opacity-60': loading && data }">
-        <div class="flex flex-wrap gap-5">
-          <!-- Lo más importante de la vista: quién va ganando la quincena (quién más retira) -->
-          <section
-            class="flex min-w-0 flex-[2_1_520px] flex-wrap items-center gap-6 rounded-[var(--radius-card)] bg-accent-50/80 px-6 py-6 ring-1 ring-accent-200/70 backdrop-blur-md sm:px-7"
-            aria-labelledby="leader-title"
+      <div
+        v-else
+        class="flex flex-col gap-2.5 transition-opacity lg:gap-4"
+        :class="{ 'opacity-60': loading && data }"
+      >
+        <!-- Cifras -->
+        <dl class="grid grid-cols-4 gap-1.5 lg:gap-3">
+          <div
+            class="glass flex min-w-0 flex-col-reverse justify-end gap-0.5 rounded-[14px] px-2.5 py-2 lg:px-4 lg:py-3"
           >
-            <svg viewBox="0 0 240 240" class="size-24 shrink-0 sm:size-[120px]" aria-hidden="true">
-              <circle cx="120" cy="120" r="116" fill="#ffe2c4" />
-              <g transform="translate(20,18)">
-                <ellipse cx="100" cy="232" rx="62" ry="60" fill="#0b79c3" />
-                <circle cx="28" cy="100" r="24" fill="#0b79c3" />
-                <circle cx="172" cy="100" r="24" fill="#0b79c3" />
-                <circle cx="28" cy="100" r="11" fill="#fff" />
-                <circle cx="172" cy="100" r="11" fill="#fff" />
-                <circle cx="100" cy="100" r="74" fill="#0b79c3" />
-                <circle cx="78" cy="90" r="28" fill="#fff" />
-                <circle cx="122" cy="90" r="28" fill="#fff" />
-                <ellipse cx="100" cy="128" rx="40" ry="32" fill="#fff" />
-                <circle cx="80" cy="88" r="12" fill="#073b5e" />
-                <circle cx="120" cy="88" r="12" fill="#073b5e" />
-                <circle cx="84" cy="84" r="4" fill="#fff" />
-                <circle cx="124" cy="84" r="4" fill="#fff" />
-                <ellipse cx="100" cy="136" rx="20" ry="16" fill="#073b5e" />
-                <ellipse cx="100" cy="144" rx="11" ry="7" fill="#ff7a8a" />
-              </g>
-            </svg>
-            <div class="flex min-w-0 flex-[1_1_220px] flex-col gap-1">
-              <p id="leader-title" class="eyebrow text-[13px] text-accent-700">
-                {{ leaders.data.value?.scope === 'all' ? 'Quien más retira' : 'Va ganando la quincena' }}
-              </p>
-              <template v-if="leader">
-                <RouterLink
-                  to="/admin/ranking"
-                  class="truncate text-[28px] leading-tight font-black text-ink-900 hover:text-brand-700 sm:text-[32px]"
-                >
-                  {{ fullName(leader.user) }}
-                </RouterLink>
-                <p class="text-base text-ink-700">{{ leaderDetail }}</p>
-              </template>
-              <p v-else-if="leaders.data.value" class="text-xl font-extrabold text-ink-700">
-                Aún nadie ha sacado nada
-              </p>
-              <p v-else class="mt-1 h-8 w-56 animate-pulse rounded-lg bg-accent-100" />
-            </div>
-            <ol
-              v-if="chasers.length"
-              class="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:min-w-[210px] sm:flex-[0_1_230px]"
-              aria-label="Le siguen"
+            <dt class="text-[10px] leading-tight font-bold text-ink-500 lg:text-xs">Productos activos</dt>
+            <dd class="num text-[19px] text-ink-900 lg:text-2xl">
+              {{ data ? formatNumber(data.activeProducts) : '—' }}
+            </dd>
+          </div>
+          <div
+            class="glass flex min-w-0 flex-col-reverse justify-end gap-0.5 rounded-[14px] px-2.5 py-2 lg:px-4 lg:py-3"
+          >
+            <dt class="text-[10px] leading-tight font-bold text-ink-500 lg:text-xs">Unidades en la nevera</dt>
+            <dd class="num text-[19px] text-ink-900 lg:text-2xl">
+              {{ data ? formatNumber(data.totalUnits) : '—' }}
+            </dd>
+          </div>
+          <div
+            class="flex min-w-0 flex-col-reverse justify-end gap-0.5 rounded-[14px] px-2.5 py-2 lg:px-4 lg:py-3"
+            :class="data?.lowStockProducts.length ? 'border border-accent-200 bg-accent-100/80' : 'glass'"
+          >
+            <dt
+              class="text-[10px] leading-tight lg:text-xs"
+              :class="
+                data?.lowStockProducts.length ? 'font-extrabold text-accent-700' : 'font-bold text-ink-500'
+              "
             >
-              <li
-                v-for="(row, i) in chasers"
-                :key="row.user.id"
-                class="flex items-center gap-2.5 rounded-xl bg-white/75 px-3 py-2 ring-1 ring-white/80"
-              >
-                <span class="w-6 font-extrabold text-accent-700">{{ i + 2 }}</span>
-                <span class="min-w-0 flex-1 truncate font-bold text-ink-800">{{ fullName(row.user) }}</span>
-                <span class="font-extrabold text-ink-900 tabular-nums"
-                  >{{ formatNumber(row.totalWithdrawn) }}<span class="sr-only"> unidades</span></span
-                >
-              </li>
-            </ol>
-          </section>
+              Por reponer
+            </dt>
+            <dd
+              class="num text-[19px] lg:text-2xl"
+              :class="data?.lowStockProducts.length ? 'text-accent-700' : 'text-ink-900'"
+            >
+              {{ data ? formatNumber(data.lowStockProducts.length) : '—' }}
+            </dd>
+          </div>
+          <div
+            class="glass flex min-w-0 flex-col-reverse justify-end gap-0.5 rounded-[14px] px-2.5 py-2 lg:px-4 lg:py-3"
+          >
+            <dt class="text-[10px] leading-tight font-bold text-ink-500 lg:text-xs">Retiros hoy</dt>
+            <dd class="num text-[19px] text-ink-900 lg:text-2xl">
+              {{ withdrawalsToday.data.value !== null ? formatNumber(withdrawalsToday.data.value) : '—' }}
+            </dd>
+          </div>
+        </dl>
 
-          <div class="flex min-w-0 flex-[1_1_300px] flex-col">
-            <PeriodBalanceCard
-              v-if="data?.currentPeriod"
-              :summary="data.currentPeriod"
-              compact
-              class="flex-1"
-            />
-            <div v-else-if="data" class="card flex flex-1 flex-col justify-center gap-2 px-6 py-[22px]">
-              <p class="text-[19px] font-black text-ink-900">Sin quincena abierta</p>
-              <p class="text-sm text-ink-500">Abre una para registrar aportes y compras.</p>
-              <RouterLink to="/admin/quincenas" class="btn-secondary mt-1 self-start"
-                >Ir a quincenas</RouterLink
+        <div class="grid gap-2.5 lg:grid-cols-2 lg:gap-4">
+          <!-- Quincena actual -->
+          <RouterLink
+            v-if="period"
+            to="/admin/quincenas/actual"
+            class="card flex flex-col gap-2 p-3 text-inherit lg:justify-center lg:gap-3 lg:p-5"
+          >
+            <span class="flex items-center gap-2">
+              <span class="section-title min-w-0 flex-1 truncate">{{ period.name }}</span>
+              <span
+                class="inline-flex h-[22px] shrink-0 items-center rounded-full px-2 text-[11px] font-extrabold"
+                :class="
+                  period.status === 'OPEN' ? 'bg-success-50 text-success-700' : 'bg-ink-100 text-ink-700'
+                "
+                >{{ periodPill }}</span
               >
-            </div>
-            <div v-else class="card h-full min-h-40 animate-pulse" />
+            </span>
+            <span
+              class="block h-1.5 overflow-hidden rounded-full bg-ink-900/10"
+              role="progressbar"
+              aria-label="Gastado de lo recaudado"
+              :aria-valuenow="Math.min(spentPercent, 100)"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            >
+              <span
+                class="block h-full rounded-full"
+                :class="period.isOverspent ? 'bg-danger-600' : 'bg-brand-600'"
+                :style="{ width: `${Math.min(spentPercent, 100)}%` }"
+              />
+            </span>
+            <span class="grid grid-cols-3 gap-1.5">
+              <span class="flex min-w-0 flex-col">
+                <span class="text-[10px] text-ink-500 lg:text-xs">Recaudado</span>
+                <span class="num truncate text-[13px] text-ink-900 lg:text-base">{{
+                  formatMoney(period.collected)
+                }}</span>
+              </span>
+              <span class="flex min-w-0 flex-col">
+                <span class="text-[10px] text-ink-500 lg:text-xs">Gastado · {{ spentPercent }} %</span>
+                <span class="num truncate text-[13px] text-ink-900 lg:text-base">{{
+                  formatMoney(period.spent)
+                }}</span>
+              </span>
+              <span class="flex min-w-0 flex-col">
+                <span class="text-[10px] text-ink-500 lg:text-xs">Saldo</span>
+                <span
+                  class="num truncate text-[13px] lg:text-base"
+                  :class="period.isOverspent ? 'text-danger-700' : 'text-success-700'"
+                  >{{ formatMoney(period.balance) }}</span
+                >
+              </span>
+            </span>
+          </RouterLink>
+          <div v-else-if="data" class="card flex flex-col gap-1.5 p-3 lg:justify-center lg:p-5">
+            <p class="section-title">Sin quincena abierta</p>
+            <p class="text-xs text-ink-500">Abre una para registrar aportes y compras.</p>
+            <RouterLink to="/admin/quincenas" class="btn-secondary mt-1 min-h-11 self-start"
+              >Ir a quincenas</RouterLink
+            >
+          </div>
+          <div v-else class="card h-[104px] animate-pulse" />
+
+          <div class="grid grid-cols-2 gap-2 lg:gap-4">
+            <!-- Va ganando -->
+            <RouterLink
+              to="/admin/ranking"
+              class="flex min-w-0 flex-col gap-1.5 rounded-[18px] bg-[linear-gradient(160deg,rgb(10_74_117/0.95),rgb(6_48_77/0.95))] p-2.5 text-white lg:p-4"
+            >
+              <span class="text-[10px] font-extrabold tracking-[0.8px] text-[#9FD3F5] uppercase">{{
+                leaders.data.value?.scope === 'all' ? 'Quien más retira' : 'Va ganando'
+              }}</span>
+              <span class="flex min-w-0 items-center gap-2">
+                <span class="grid size-[34px] shrink-0 place-items-center rounded-full bg-[#FFE2C4]">
+                  <svg width="26" height="26" viewBox="0 18 200 164" aria-hidden="true">
+                    <circle cx="28" cy="100" r="24" fill="#0b79c3" />
+                    <circle cx="172" cy="100" r="24" fill="#0b79c3" />
+                    <circle cx="100" cy="100" r="74" fill="#0b79c3" />
+                    <circle cx="78" cy="90" r="28" fill="#fff" />
+                    <circle cx="122" cy="90" r="28" fill="#fff" />
+                    <ellipse cx="100" cy="128" rx="40" ry="32" fill="#fff" />
+                    <circle cx="80" cy="90" r="11" fill="#073b5e" />
+                    <circle cx="120" cy="90" r="11" fill="#073b5e" />
+                    <ellipse cx="100" cy="136" rx="18" ry="14" fill="#073b5e" />
+                  </svg>
+                </span>
+                <span v-if="leader" class="flex min-w-0 flex-col leading-tight">
+                  <span class="truncate font-display text-sm font-black">{{ fullName(leader.user) }}</span>
+                  <span class="text-[11px] font-extrabold text-[#FFB46B]">{{ leaderDetail }}</span>
+                </span>
+                <span v-else-if="leaders.data.value" class="text-xs font-extrabold"
+                  >Aún nadie ha retirado nada</span
+                >
+                <span v-else class="h-7 w-24 animate-pulse rounded-lg bg-white/15" />
+              </span>
+              <span v-if="chasers" class="truncate text-[11px] text-[#CFE3F1]">{{ chasers }}</span>
+            </RouterLink>
+
+            <!-- Por reponer -->
+            <section class="card flex min-w-0 flex-col gap-1.5 p-2.5 lg:p-4" aria-labelledby="restock-title">
+              <h2
+                id="restock-title"
+                class="text-[10px] font-extrabold tracking-[0.8px] text-accent-700 uppercase"
+              >
+                Por reponer
+              </h2>
+              <ul v-if="restock.length" class="flex flex-col">
+                <li v-for="(p, i) in restock" :key="p.id" :class="{ 'border-t border-ink-900/8': i > 0 }">
+                  <RouterLink
+                    :to="`/admin/productos/${p.id}/editar`"
+                    class="flex min-h-11 items-center justify-between gap-2"
+                    :aria-label="restockLabel(p)"
+                  >
+                    <span class="truncate text-[13px] font-extrabold text-ink-900">{{ p.name }}</span>
+                    <span
+                      v-if="p.quantity === 0"
+                      class="inline-flex h-5 shrink-0 items-center rounded-md bg-ink-900 px-1.5 text-[10px] font-extrabold text-white"
+                      >Agotado</span
+                    >
+                    <span v-else class="num shrink-0 text-xs text-accent-700"
+                      >{{ p.quantity }}/{{ p.minStock }}</span
+                    >
+                  </RouterLink>
+                </li>
+              </ul>
+              <p v-else-if="data" class="text-xs text-ink-500">Todo con buen stock.</p>
+              <span v-else class="h-8 animate-pulse rounded-lg bg-ink-100" />
+            </section>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatTile label="Productos activos" :value="data ? formatNumber(data.activeProducts) : '—'" />
-          <StatTile label="Unidades en la nevera" :value="data ? formatNumber(data.totalUnits) : '—'" />
-          <StatTile
-            label="Con stock bajo"
-            :value="data ? formatNumber(data.lowStockProducts.length) : '—'"
-            :tone="data && data.lowStockProducts.length ? 'warning' : 'default'"
-          />
-          <StatTile
-            label="Retiros hoy"
-            :value="withdrawalsToday.data.value !== null ? formatNumber(withdrawalsToday.data.value) : '—'"
-          />
-        </div>
-
-        <div class="flex flex-wrap items-start gap-5">
-          <section class="card min-w-0 flex-[2_1_520px] overflow-hidden" aria-labelledby="latest-title">
-            <div class="flex items-center justify-between gap-3 border-b border-ink-200/70 px-6 py-3">
-              <h2 id="latest-title" class="text-[19px] font-black text-ink-900">Últimos movimientos</h2>
+        <div class="grid gap-2.5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-4">
+          <!-- Últimos movimientos -->
+          <section class="card flex flex-col px-3 py-1 lg:px-5" aria-labelledby="latest-title">
+            <div class="flex min-h-11 items-center justify-between gap-2">
+              <h2 id="latest-title" class="section-title">Últimos movimientos</h2>
               <RouterLink
                 to="/admin/movimientos"
-                class="inline-flex min-h-11 items-center font-extrabold text-brand-600 hover:text-brand-800"
+                class="inline-flex min-h-11 items-center text-xs font-extrabold text-brand-700 hover:text-ink-900"
                 >Ver todos</RouterLink
               >
             </div>
-            <EmptyState
-              v-if="data && !data.latestMovements.length"
-              icon="list"
-              title="Todavía no hay movimientos"
-              message="Cuando alguien meta o saque productos aparecerá aquí."
-            />
-            <ul v-else class="divide-y divide-ink-200/60">
-              <li v-if="!data" class="px-6 py-4">
-                <div class="h-5 w-2/3 animate-pulse rounded bg-ink-100" />
+            <p v-if="data && !feed.length" class="border-t border-ink-900/8 py-4 text-[13px] text-ink-500">
+              Todavía no hay movimientos.
+            </p>
+            <ul v-else class="flex flex-col">
+              <li v-if="!data" class="flex min-h-[42px] items-center border-t border-ink-900/8">
+                <span class="h-4 w-2/3 animate-pulse rounded bg-ink-100" />
               </li>
               <li
-                v-for="m in data?.latestMovements.slice(0, 6) ?? []"
-                :key="m.id"
-                class="flex items-center gap-3.5 px-6 py-3"
+                v-for="row in feed"
+                :key="row.key"
+                class="flex min-h-[42px] items-center gap-2.5 border-t border-ink-900/8 text-[13px] lg:text-sm"
               >
-                <span class="w-[68px] shrink-0"
-                  ><MovementTypeBadge :type="m.type" :source="m.source" plain
-                /></span>
-                <div class="min-w-0 flex-1">
-                  <p v-if="m.source === 'PURCHASE_VOID'" class="text-[15px] text-ink-700">
-                    Se anuló una compra: salieron {{ withUnit(m.quantity, m.product.unit) }} de
-                    <strong class="font-extrabold text-ink-900">{{ m.product.name }}</strong>
-                  </p>
-                  <p v-else class="text-[15px] text-ink-700">
-                    <strong class="font-extrabold text-ink-900">{{ fullName(m.performedBy) }}</strong>
-                    {{ verb(m) }} {{ m.quantity }}
-                    <strong class="font-extrabold text-ink-900">{{ m.product.name }}</strong>
-                  </p>
-                  <p
-                    v-if="m.source !== 'PURCHASE_VOID' && m.performedBy.id !== m.registeredBy.id"
-                    class="text-xs text-ink-500"
+                <template v-if="row.kind === 'purchase'">
+                  <span
+                    class="grid size-[26px] shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700"
                   >
-                    Registrado por {{ fullName(m.registeredBy) }}
-                  </p>
-                </div>
-                <time class="shrink-0 text-[13px] text-ink-500" :datetime="m.createdAt">{{
-                  formatRelative(m.createdAt)
-                }}</time>
+                    <Icon name="bag" :size="14" :stroke="2.6" />
+                  </span>
+                  <RouterLink
+                    v-if="row.purchaseId"
+                    :to="`/admin/compras/${row.purchaseId}`"
+                    class="min-w-0 flex-1 truncate py-2 text-ink-800 hover:underline"
+                    ><strong class="text-ink-900">Compra</strong> {{ purchaseText(row) }}</RouterLink
+                  >
+                  <span v-else class="min-w-0 flex-1 truncate text-ink-800"
+                    ><strong class="text-ink-900">Compra</strong> {{ purchaseText(row) }}</span
+                  >
+                  <time class="shrink-0 text-[11px] text-ink-500" :datetime="row.createdAt">{{
+                    when(row.createdAt)
+                  }}</time>
+                </template>
+                <template v-else>
+                  <span
+                    class="grid size-[26px] shrink-0 place-items-center rounded-lg"
+                    :class="
+                      row.movement.type === 'OUT'
+                        ? 'bg-accent-100 text-accent-700'
+                        : 'bg-success-50 text-success-700'
+                    "
+                  >
+                    <Icon
+                      :name="row.movement.type === 'OUT' ? 'arrowUp' : 'arrowDown'"
+                      :size="14"
+                      :stroke="3"
+                    />
+                    <span class="sr-only">{{ row.movement.type === 'OUT' ? 'Retiro' : 'Ingreso' }}</span>
+                  </span>
+                  <span
+                    v-if="row.movement.source === 'PURCHASE_VOID'"
+                    class="min-w-0 flex-1 truncate text-ink-800"
+                  >
+                    <strong class="text-ink-900">Compra anulada:</strong> salieron {{ row.movement.quantity }}
+                    {{ row.movement.product.name }}
+                  </span>
+                  <span v-else class="min-w-0 flex-1 truncate text-ink-800"
+                    ><strong class="text-ink-900">{{ shortName(row.movement.performedBy) }}</strong>
+                    {{ row.movement.type === 'OUT' ? 'retiró' : 'ingresó' }} {{ row.movement.quantity }}
+                    {{ row.movement.product.name }}</span
+                  >
+                  <time class="shrink-0 text-[11px] text-ink-500" :datetime="row.movement.createdAt">{{
+                    when(row.movement.createdAt)
+                  }}</time>
+                </template>
               </li>
             </ul>
           </section>
 
-          <section class="card flex min-w-0 flex-[1_1_300px] flex-col gap-3.5 px-6 pt-[18px] pb-[22px]">
-            <div class="flex items-center justify-between gap-2">
-              <h2 class="text-[19px] font-black text-ink-900">Por reponer</h2>
-              <span class="text-[13px] text-ink-500">stock ≤ mínimo</span>
-            </div>
-            <ul v-if="data?.lowStockProducts.length" class="flex flex-col gap-3">
-              <li v-for="p in data.lowStockProducts" :key="p.id" class="flex items-center gap-3">
-                <ProductIcon :category="lookups.categoryName(p.categoryId)" />
-                <div class="min-w-0 flex-1">
-                  <p class="truncate font-extrabold text-ink-900">{{ p.name }}</p>
-                  <p class="text-[13px] text-ink-500">{{ remaining(p) }}</p>
-                </div>
-                <Badge :tone="p.quantity === 0 ? 'danger' : 'accent'">{{
-                  p.quantity === 0 ? 'Agotado' : 'Bajo'
-                }}</Badge>
-              </li>
-            </ul>
-            <p v-else-if="data" class="text-sm text-ink-500">Todo con buen stock.</p>
-
-            <div class="h-px bg-ink-200/70" />
-            <h2 class="text-[19px] font-black text-ink-900">Más retiros · 30 días</h2>
+          <!-- Más retiros · 30 días -->
+          <section
+            class="card flex flex-col gap-2 px-3 pt-2.5 pb-3 lg:px-5 lg:py-4"
+            aria-labelledby="month-title"
+          >
+            <h2 id="month-title" class="section-title">Más retiros · 30 días</h2>
             <ul
               v-if="monthRows.length"
-              class="flex flex-col gap-2.5 text-sm"
-              aria-label="Unidades sacadas por persona en los últimos 30 días"
+              class="flex flex-col gap-2 text-xs lg:text-sm"
+              aria-label="Unidades retiradas por persona en los últimos 30 días"
             >
               <li
                 v-for="(row, i) in monthRows"
                 :key="row.user.id"
-                class="grid grid-cols-[minmax(0,120px)_1fr_44px] items-center gap-3"
+                class="grid grid-cols-[96px_minmax(0,1fr)_28px] items-center gap-2 lg:grid-cols-[130px_minmax(0,1fr)_32px]"
               >
-                <span class="truncate font-bold text-ink-800">{{ fullName(row.user) }}</span>
-                <span class="h-3 rounded-full bg-ink-100/80" aria-hidden="true">
+                <span class="truncate font-bold text-ink-900">{{ fullName(row.user) }}</span>
+                <span class="block h-2.5" aria-hidden="true">
                   <span
-                    class="block h-full rounded-full"
-                    :class="i === 0 ? 'bg-brand-600' : 'bg-ink-400/70'"
+                    class="block h-full rounded"
+                    :class="i === 0 ? 'bg-brand-600' : 'bg-[#9DB6C9]'"
                     :style="{ width: `${Math.max(8, (row.totalWithdrawn / monthMax) * 100)}%` }"
                   />
                 </span>
-                <span class="text-right font-extrabold text-ink-900 tabular-nums"
+                <span class="num text-right text-ink-800"
                   >{{ formatNumber(row.totalWithdrawn) }}<span class="sr-only"> unidades</span></span
                 >
               </li>
             </ul>
-            <p v-else-if="data" class="text-sm text-ink-500">Sin retiros en los últimos 30 días.</p>
+            <p v-else-if="data" class="text-xs text-ink-500">Sin retiros en los últimos 30 días.</p>
           </section>
         </div>
       </div>
-    </section>
+    </div>
   </AdminPage>
 </template>

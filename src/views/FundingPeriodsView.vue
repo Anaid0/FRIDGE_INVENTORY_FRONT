@@ -2,7 +2,7 @@
 import AdminPage from '@/layouts/AdminPage.vue';
 import { useOnEnter } from '@/composables/useOnEnter';
 import { computed, reactive, ref, watch } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import PeriodBalanceCard from '@/components/PeriodBalanceCard.vue';
 import PeriodStatusBadge from '@/components/PeriodStatusBadge.vue';
 import BaseDialog from '@/components/ui/BaseDialog.vue';
@@ -16,16 +16,27 @@ import { useServices } from '@/services/container';
 import { ApiError, errorMessage } from '@/services/errors';
 import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toasts';
-import { toLocalDateInput } from '@/utils/dates';
-import { formatDateOnly, formatMoney } from '@/utils/format';
+import { formatPeriodRange, toLocalDateInput } from '@/utils/dates';
+import { formatMoney } from '@/utils/format';
 
 const { funding } = useServices();
 const auth = useAuthStore();
 const toasts = useToastStore();
+const route = useRoute();
 const router = useRouter();
 
 const { data, error, loading, run } = useAsync(() => funding.list());
-useOnEnter(run);
+
+/**
+ * Con ?abrir=1 (botón "Abrir quincena" de la pestaña Quincena cuando no hay ninguna abierta) se abre el
+ * diálogo apenas carga la lista, si de verdad no hay otra abierta.
+ */
+useOnEnter(async () => {
+  await run();
+  if (!route.query.abrir) return;
+  void router.replace({ query: {} }); // al volver a la lista no se reabre
+  if (auth.isAdmin && data.value && !current.value) openDialog.value = true;
+});
 
 const current = computed(() => data.value?.find((p) => p.status === 'OPEN') ?? null);
 const history = computed(() => data.value?.filter((p) => p.status !== 'OPEN') ?? []);
@@ -87,87 +98,101 @@ async function submit() {
 <template>
   <AdminPage title="Quincenas">
     <section>
-      <PageHeader title="Quincenas" subtitle="El dinero que reúne el equipo cada quincena y en qué se gasta.">
+      <PageHeader
+        title="Quincenas"
+        subtitle="El dinero que reúne el equipo cada quincena y en qué se gasta."
+        back="/admin/quincenas/actual"
+      >
         <template #actions>
           <button
             v-if="auth.isAdmin"
             type="button"
-            class="btn-primary min-h-11 px-[18px]"
+            class="btn-primary min-h-11 rounded-[14px] px-3.5 text-xs lg:text-sm"
             :disabled="Boolean(current)"
             @click="openDialog = true"
           >
-            <Icon name="plus" :size="16" /> Abrir quincena
+            <Icon name="plus" :size="16" :stroke="2.6" /> Abrir quincena
           </button>
         </template>
       </PageHeader>
-      <p v-if="auth.isAdmin && current" class="-mt-3 mb-5 text-xs text-ink-500">
+      <p v-if="auth.isAdmin && current" class="-mt-2 mb-3 text-[11px] text-ink-500">
         Para abrir otra quincena primero cierra la actual.
       </p>
 
       <ErrorState v-if="error && !data" :message="error" @retry="run" />
 
-      <div v-else class="space-y-6 transition-opacity" :class="{ 'opacity-60': loading && data }">
-        <div v-if="current">
-          <h2 class="eyebrow mb-3 text-ink-500">Quincena actual</h2>
+      <div
+        v-else
+        class="grid gap-2.5 transition-opacity lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-4"
+        :class="{ 'opacity-60': loading && data }"
+      >
+        <div class="flex min-w-0 flex-col gap-2">
+          <h2 class="eyebrow px-1 text-ink-500">Quincena actual</h2>
           <RouterLink
+            v-if="current"
             :to="`/admin/quincenas/${current.periodId}`"
-            class="block rounded-[var(--radius-card)] hover:ring-2 hover:ring-brand-200"
+            class="block rounded-[20px] transition-transform hover:ring-2 hover:ring-brand-300 active:scale-[0.99]"
           >
-            <PeriodBalanceCard :summary="current" />
+            <PeriodBalanceCard :summary="current" with-title />
           </RouterLink>
-        </div>
-        <EmptyState
-          v-else-if="data"
-          icon="wallet"
-          title="No hay una quincena abierta"
-          :message="
-            auth.isAdmin
-              ? 'Abre una para registrar aportes y compras.'
-              : 'El administrador debe abrir la próxima quincena.'
-          "
-        />
-
-        <div v-if="history.length" class="card overflow-hidden">
-          <h2 class="border-b border-ink-200/70 px-5 py-4 text-[19px] font-black text-ink-900">
-            Quincenas anteriores
-          </h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-[15px]">
-              <thead class="glass-inset text-[13px] text-ink-500">
-                <tr>
-                  <th scope="col" class="px-5 py-3 text-left font-extrabold">Quincena</th>
-                  <th scope="col" class="px-5 py-3 text-left font-extrabold">Estado</th>
-                  <th scope="col" class="px-5 py-3 text-right font-extrabold">Recaudado</th>
-                  <th scope="col" class="px-5 py-3 text-right font-extrabold">Gastado</th>
-                  <th scope="col" class="px-5 py-3 text-right font-extrabold">Saldo</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-ink-200/60">
-                <tr v-for="p in history" :key="p.periodId" class="hover:bg-white/55">
-                  <td class="px-5 py-3">
-                    <RouterLink
-                      :to="`/admin/quincenas/${p.periodId}`"
-                      class="font-extrabold text-ink-900 hover:text-brand-700"
-                    >
-                      {{ p.name }}
-                    </RouterLink>
-                    <p class="text-xs text-ink-500">
-                      {{ formatDateOnly(p.startDate) }} – {{ formatDateOnly(p.endDate) }}
-                    </p>
-                  </td>
-                  <td class="px-5 py-3"><PeriodStatusBadge :status="p.status" /></td>
-                  <td class="px-5 py-3 text-right tabular-nums">{{ formatMoney(p.collected) }}</td>
-                  <td class="px-5 py-3 text-right tabular-nums">{{ formatMoney(p.spent) }}</td>
-                  <td
-                    class="px-5 py-3 text-right font-extrabold tabular-nums"
-                    :class="p.isOverspent ? 'text-danger-700' : 'text-ink-900'"
-                  >
-                    {{ formatMoney(p.balance) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-else-if="data" class="card">
+            <EmptyState
+              icon="wallet"
+              title="No hay una quincena abierta"
+              :message="
+                auth.isAdmin
+                  ? 'Abre una para registrar aportes y compras.'
+                  : 'El administrador debe abrir la próxima quincena.'
+              "
+            />
           </div>
+          <div v-else class="h-[170px] animate-pulse rounded-[20px] bg-ink-900/15" aria-busy="true" />
+        </div>
+
+        <section
+          v-if="history.length"
+          class="card min-w-0 px-3 pt-1 pb-1 lg:px-4"
+          aria-labelledby="history-title"
+        >
+          <h2 id="history-title" class="section-title flex min-h-10 items-center">Quincenas anteriores</h2>
+          <ul>
+            <li v-for="p in history" :key="p.periodId" class="border-t border-ink-900/8">
+              <RouterLink
+                :to="`/admin/quincenas/${p.periodId}`"
+                class="flex min-h-[60px] items-center gap-2.5 py-2 hover:bg-white/40"
+              >
+                <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span class="flex min-w-0 items-center gap-1.5">
+                    <span class="truncate text-[13px] font-extrabold text-ink-900">{{ p.name }}</span>
+                    <PeriodStatusBadge :status="p.status" small />
+                  </span>
+                  <span class="text-[11px] text-ink-500">{{
+                    formatPeriodRange(p.startDate, p.endDate, true)
+                  }}</span>
+                  <span class="flex flex-wrap gap-x-3 text-[11px] text-ink-500">
+                    <span
+                      >Recaudado <span class="num text-ink-800">{{ formatMoney(p.collected) }}</span></span
+                    >
+                    <span
+                      >Gastado <span class="num text-ink-800">{{ formatMoney(p.spent) }}</span></span
+                    >
+                  </span>
+                </span>
+                <span class="flex shrink-0 flex-col items-end">
+                  <span class="text-[10px] text-ink-500">Saldo</span>
+                  <span
+                    class="num text-[13px]"
+                    :class="p.isOverspent ? 'text-danger-700' : 'text-success-700'"
+                    >{{ formatMoney(p.balance) }}</span
+                  >
+                </span>
+                <Icon name="chevronRight" :size="16" :stroke="2.2" class="shrink-0 text-ink-400" />
+              </RouterLink>
+            </li>
+          </ul>
+        </section>
+        <div v-else-if="data" class="card px-4 py-6 text-center text-xs text-ink-500">
+          Aún no hay quincenas anteriores.
         </div>
       </div>
 
@@ -190,13 +215,18 @@ async function submit() {
           <FormField id="pd-notes" label="Notas" optional>
             <input id="pd-notes" v-model="form.notes" type="text" maxlength="255" class="input" />
           </FormField>
-          <div class="flex justify-end gap-2 pt-2">
-            <button type="button" class="btn-secondary" :disabled="saving" @click="openDialog = false">
+          <div class="grid grid-cols-2 gap-2 pt-2">
+            <button
+              type="button"
+              class="btn-secondary min-h-11"
+              :disabled="saving"
+              @click="openDialog = false"
+            >
               Cancelar
             </button>
             <button
               type="submit"
-              class="btn-primary"
+              class="btn-primary min-h-11"
               :disabled="saving || !form.name || !form.startDate || !form.endDate"
             >
               {{ saving ? 'Abriendo…' : 'Abrir quincena' }}

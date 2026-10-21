@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
 import type { TokenStorage } from '../ports';
 import type { ApiError } from '../errors';
+import { serverHeaders } from '../serverConfig';
 import { toApiError } from './ApiError';
 
 export interface ApiClientOptions {
@@ -15,6 +16,8 @@ export function createApiClient({ baseURL, tokens, onUnauthorized }: ApiClientOp
   const client = axios.create({ baseURL, timeout: 15_000 });
 
   client.interceptors.request.use((config) => {
+    for (const [name, value] of Object.entries(serverHeaders(config.baseURL)))
+      config.headers.set(name, value);
     const token = tokens.get();
     if (token) config.headers.set('Authorization', `Bearer ${token}`);
     return config;

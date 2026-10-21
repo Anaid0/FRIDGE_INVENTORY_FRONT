@@ -2,8 +2,11 @@ import { IonicVue } from '@ionic/vue';
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import App from './App.vue';
-// Letra de la marca (logotipo e ilustraciones), empaquetada: la tablet no necesita internet.
+// Letras de los mockups, empaquetadas (la tablet no necesita internet): Nunito para títulos, Nunito Sans
+// para el texto y JetBrains Mono para códigos, PIN y cifras.
 import '@fontsource-variable/nunito';
+import '@fontsource-variable/nunito-sans';
+import '@fontsource-variable/jetbrains-mono';
 import './assets/main.css';
 import { preferencesStore } from './native/keyValueStore';
 import { isNative, showSystemBars } from './native/platform';
@@ -11,7 +14,7 @@ import { createAppRouter } from './router';
 import { provideServerConfig, provideServices } from './services/container';
 import { createApiClient } from './services/http/apiClient';
 import { createHttpServices } from './services/http/httpServices';
-import { createServerConfig } from './services/serverConfig';
+import { createServerConfig, normalizeServerUrl } from './services/serverConfig';
 import {
   ADMIN_TOKEN_KEY,
   createLocalTokenStorage,
@@ -39,6 +42,7 @@ async function bootstrap() {
     configurable: native,
     store: preferencesStore,
     defaultUrl: import.meta.env.VITE_API_URL ?? '/api',
+    presetUrl: normalizeServerUrl(import.meta.env.VITE_NATIVE_API_URL ?? ''),
   });
   await Promise.all([tokens.load(), kioskTokens.load(), serverConfig.load()]);
 

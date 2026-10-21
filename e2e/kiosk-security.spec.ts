@@ -9,12 +9,14 @@ import {
   apiProductId,
   bearer,
   cartPanel,
+  keypad,
   kioskRegister,
   LUIS,
   MARTA,
   openPairedTablet,
   resetDatabase,
   tapProduct,
+  typeAndOk,
   typePin,
 } from './fixtures';
 
@@ -28,45 +30,30 @@ test.beforeAll(async ({ request }) => {
   ({ token: kioskToken, deviceId } = await apiPairTablet(request, adminToken));
 });
 
-const done = (page: import('@playwright/test').Page, name: string) =>
-  activeView(page)
-    .getByRole('status')
-    .filter({ hasText: `¡Listo, ${name}!` });
+const done = (page: import('@playwright/test').Page) => activeView(page).getByRole('region', { name: 'Confirmación' });
 
-test('tras 5 PIN incorrectos la persona queda bloqueada; el admin restablece el PIN', async ({
+test('tras 5 PIN incorrectos seguidos la tablet deja de aceptar PIN un par de minutos', async ({
   page,
   request,
 }) => {
-  await openPairedTablet(page, kioskToken);
-  await kioskRegister(page, [['Manzanas', 1]], { name: MARTA.name, pin: '0000' });
-  await expect(activeView(page).getByRole('alert')).toContainText('Te quedan 4 intentos');
-  for (let i = 0; i < 3; i++) await typePin(page, '0000');
-  await expect(activeView(page).getByRole('alert')).toContainText('Te queda 1 intento');
-  await typePin(page, '0000');
-  await expect(activeView(page).getByRole('alert')).toContainText(
-    'Demasiados intentos. Podrás volver a intentarlo a las',
-  );
-  // Ni con el PIN correcto mientras dure el bloqueo.
-  await typePin(page, MARTA.pin);
-  await expect(activeView(page).getByRole('alert')).toContainText('Demasiados intentos');
-
-  const martaId = await apiPersonId(request, adminToken, MARTA.name);
-  const reset = await request.post(`${API_URL}/people/${martaId}/pin`, {
-    headers: bearer(adminToken),
-    data: { pin: '7351' },
-  });
-  expect(reset.ok()).toBe(true);
-  await typePin(page, '7351');
-  await expect(done(page, 'Marta')).toContainText('Sacaste 1 Manzanas.');
+  // Tablet propia: el bloqueo es por tablet y no debe afectar a las demás pruebas.
+  const { token } = await apiPairTablet(request, adminToken, 'Tablet bloqueo');
+  await openPairedTablet(page, token);
+  await kioskRegister(page, [['Manzanas', 1]], { name: MARTA.name, pin: '9999' }); // PIN de nadie
+  await expect(keypad(page)).toContainText('te quedan 4 intentos');
+  for (let i = 0; i < 3; i++) await typeAndOk(page, '9999');
+  await expect(keypad(page)).toContainText('te queda 1 intento');
+  await typeAndOk(page, '9999');
+  await expect(keypad(page)).toContainText('Demasiados intentos · vuelve a intentarlo a las');
+  // Ni con un PIN correcto mientras dure el bloqueo.
+  await typeAndOk(page, MARTA.pin);
+  await expect(keypad(page)).toContainText('Demasiados intentos');
+  await expect(done(page)).toHaveCount(0);
 });
 
 test('cada persona cambia su PIN en la tablet y luego lo usa', async ({ page }) => {
   await openPairedTablet(page, kioskToken);
   await tapProduct(page, 'Papas fritas');
-  await cartPanel(page)
-    .getByRole('button', { name: /Continuar/ })
-    .click();
-  await activeView(page).getByRole('button', { name: /Ana/ }).click();
   await activeView(page).getByRole('button', { name: 'Cambiar mi PIN' }).click();
 
   await typePin(page, ANA.pin);
@@ -75,22 +62,21 @@ test('cada persona cambia su PIN en la tablet y luego lo usa', async ({ page }) 
   await typePin(page, '9147');
   await typePin(page, '9147');
 
-  await expect(activeView(page).getByRole('heading', { name: 'Hola, Ana' })).toBeVisible(); // vuelve al PIN con la lista intacta
-  await typePin(page, ANA.pin);
-  await expect(activeView(page).getByRole('alert')).toContainText('PIN incorrecto');
-  await typePin(page, '9147');
-  await expect(done(page, 'Ana')).toContainText('Sacaste 1 Papas fritas.');
+  // Vuelve a la máquina con el retiro intacto, pidiendo el PIN.
+  await expect(activeView(page).getByRole('status').filter({ hasText: 'tu PIN se cambió' })).toBeVisible();
+  await expect(keypad(page)).toContainText('TU PIN');
+  await typeAndOk(page, ANA.pin);
+  await expect(keypad(page)).toContainText('PIN incorrecto');
+  await typeAndOk(page, '9147');
+  await expect(done(page)).toContainText('Retiraste 1 Papas fritas');
 });
 
-test('si otra persona saca algo mientras alguien elige, la lista se ajusta y se avisa', async ({
+test('si otra persona saca algo mientras alguien elige, el retiro se ajusta y se avisa', async ({
   page,
   request,
 }) => {
   await openPairedTablet(page, kioskToken);
   await tapProduct(page, 'Agua con gas', 2); // demo: hay 2
-  await cartPanel(page)
-    .getByRole('button', { name: /Continuar/ })
-    .click();
 
   // Mientras tanto, el admin registra que alguien sacó 1.
   const aguaId = await apiProductId(request, adminToken, 'Agua con gas');
@@ -100,27 +86,20 @@ test('si otra persona saca algo mientras alguien elige, la lista se ajusta y se 
     data: { productId: aguaId, quantity: 1, performedBy: luisId },
   });
 
-  await activeView(page).getByRole('button', { name: /Luis/ }).click();
-  await typePin(page, LUIS.pin);
-  await expect(
-    activeView(page).getByRole('status').filter({ hasText: 'Cambió el stock de Agua con gas' }),
-  ).toBeVisible();
-  await expect(cartPanel(page)).toContainText('Agua con gas');
-  await expect(cartPanel(page).getByLabel('Una Agua con gas más')).toBeDisabled(); // ahora solo queda 1
+  await typeAndOk(page, LUIS.pin);
+  await expect(keypad(page)).toContainText('Cambió el stock de Agua con gas');
+  await expect(cartPanel(page)).toContainText('1×Agua con gas');
 });
 
-test('tras un minuto sin uso, la tablet vuelve sola al inicio y vacía la lista', async ({ page }) => {
+test('tras un minuto sin uso, la máquina se limpia sola', async ({ page }) => {
   await page.clock.install();
   await openPairedTablet(page, kioskToken);
   await tapProduct(page, 'Gaseosa 400 ml');
-  await cartPanel(page)
-    .getByRole('button', { name: /Continuar/ })
-    .click();
-  await expect(activeView(page).getByRole('heading', { name: '¿Quién eres?' })).toBeVisible();
+  await expect(keypad(page)).toContainText('TU PIN');
 
   await page.clock.runFor(61_000);
-  await expect(activeView(page).getByRole('tab', { name: 'Sacar' })).toHaveAttribute('aria-selected', 'true');
-  await expect(cartPanel(page)).toContainText('Toca los productos para agregarlos.');
+  await expect(cartPanel(page)).toContainText('Tu retiro está vacío');
+  await expect(keypad(page)).toContainText('Toca los productos que vas a llevar');
 });
 
 test('si el admin revoca la tablet con la app abierta, deja de funcionar al instante', async ({
@@ -133,9 +112,8 @@ test('si el admin revoca la tablet con la app abierta, deja de funcionar al inst
   });
   expect(revoked.ok()).toBe(true);
 
-  // La siguiente petición a la API (el ranking) recibe 401 DEVICE_REVOKED: la pantalla cambia antes de que
-  // la pestaña llegue a quedar seleccionada, por eso solo se toca.
-  await activeView(page).getByRole('tab', { name: 'Ranking' }).click();
+  // El siguiente retiro recibe 401 DEVICE_REVOKED.
+  await kioskRegister(page, [['Manzanas', 1]], LUIS);
   await expect(
     activeView(page).getByRole('heading', { name: 'Esta tablet fue desautorizada' }),
   ).toBeVisible();

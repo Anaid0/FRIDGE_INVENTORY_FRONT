@@ -15,13 +15,16 @@
 /*
  * Tokens de diseño de FridgeYA, tomados de los mockups (design-assets/): azul del logo (brand), azul
  * marino para el texto (ink-900 = #073B5E), naranja de acento (accent; "Sacar") y verde (success; "Meter").
- * Se usan como clases de Tailwind: bg-brand-600, text-ink-700, etc. Toda la app usa Nunito.
+ * Se usan como clases de Tailwind: bg-brand-600, text-ink-700, etc.
+ * Letras: Nunito Sans para el texto (font-sans), Nunito para títulos y botones grandes (font-display) y
+ * JetBrains Mono para códigos de producto, PIN y cifras (font-mono).
  */
 @theme {
   --font-sans:
-    'Nunito Variable', 'Nunito', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial,
-    sans-serif;
-  --font-display: var(--font-sans);
+    'Nunito Sans Variable', 'Nunito Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    Arial, sans-serif;
+  --font-display: 'Nunito Variable', 'Nunito', var(--font-sans);
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Menlo, monospace;
 
   --color-brand-50: #f1f8fd;
   --color-brand-100: #e0effa;
@@ -42,7 +45,7 @@
   --color-ink-500: #4f6b80; /* texto secundario de los mockups; se lee bien sobre vidrio */
   --color-ink-600: #3d5a70;
   --color-ink-700: #2c4a60;
-  --color-ink-800: #163f5f;
+  --color-ink-800: #1e3a50; /* texto de párrafo de los mockups */
   --color-ink-900: #073b5e; /* marino: títulos y texto principal */
 
   --color-accent-50: #fff7ee;
@@ -64,19 +67,30 @@
   --color-rose-50: #fce4ec;
   --color-rose-700: #a3214a;
 
-  --color-danger-50: #fef2f2;
-  --color-danger-600: #dc2626;
-  --color-danger-700: #b91c1c;
+  --color-danger-50: #fff1f0;
+  --color-danger-200: #f6c4bd;
+  --color-danger-600: #d0362a;
+  --color-danger-700: #b42318; /* error de los mockups */
   --color-warning-50: #fffbeb;
   --color-warning-600: #d97706;
   --color-warning-700: #b45309;
 
-  --radius-card: 1.375rem; /* 22px, como las tarjetas de los mockups */
+  --radius-card: 1.125rem; /* 18px, como las tarjetas de los mockups */
 }
 
 @layer base {
   html {
     color-scheme: light;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink-800);
+  }
+  /* Títulos en Nunito, como en los mockups. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
   }
   /* Reset mínimo de elementos nativos (reemplaza el preflight de Tailwind sin tocar a Ionic). */
   h1,
@@ -135,8 +149,8 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
-  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
 }
 
 /* Vidrio más opaco: barras, paneles con mucho texto y elementos que flotan sobre otro contenido. */
@@ -147,7 +161,7 @@
 
 /* Relleno sutil dentro de una superficie de vidrio (cabeceras de tabla, totales, filas resaltadas). */
 @utility glass-inset {
-  background: rgb(255 255 255 / 0.45);
+  background: rgb(255 255 255 / 0.38);
 }
 
 @utility card {
@@ -181,16 +195,27 @@
 }
 
 /* Control segmentado (Todos / Salidas / Entradas): contenedor + opciones. */
+/* Mockups: contenedor de vidrio con la opción activa en blanco. */
 @utility segmented {
-  @apply inline-flex gap-1 rounded-2xl bg-brand-100/70 p-1;
+  @apply inline-flex gap-1 rounded-2xl border border-white/90 bg-white/55 p-1 backdrop-blur-md;
 }
 @utility segmented-option {
-  @apply rounded-xl px-4 py-2 text-sm font-extrabold text-ink-700 transition-colors hover:bg-white/60 aria-selected:bg-white aria-selected:text-ink-900 aria-selected:shadow-[0_1px_3px_rgb(7_59_94/0.12)] aria-pressed:bg-white aria-pressed:text-ink-900 aria-pressed:shadow-[0_1px_3px_rgb(7_59_94/0.12)];
+  @apply rounded-xl px-4 py-2 text-[13px] font-extrabold text-ink-700 transition-colors hover:bg-white/60 aria-selected:bg-white aria-selected:text-ink-900 aria-selected:shadow-[0_1px_3px_rgb(7_59_94/0.12)] aria-pressed:bg-white aria-pressed:text-ink-900 aria-pressed:shadow-[0_1px_3px_rgb(7_59_94/0.12)];
 }
 
 /* Título de página de los mockups (Nunito 900, marino). */
 @utility page-title {
-  @apply text-3xl font-black tracking-tight text-ink-900 sm:text-4xl;
+  @apply font-display text-[21px] leading-tight font-black text-ink-900 lg:text-[26px];
+}
+
+/* Título de tarjeta o sección (Nunito 900, 15px). */
+@utility section-title {
+  @apply font-display text-[15px] font-black text-ink-900;
+}
+
+/* Cifras, códigos y PIN en JetBrains Mono. */
+@utility num {
+  @apply font-mono font-extrabold tabular-nums;
 }
 
 /* Etiqueta de sección en mayúsculas (INVENTARIO, VA GANANDO LA QUINCENA…). */
@@ -208,4 +233,21 @@
 
 @utility label {
   @apply mb-1.5 block text-sm font-extrabold text-ink-900;
+}
+
+/* Teclas y casillas de la máquina: se hunden un poco al tocarlas (mockups: .fy-k). */
+@utility press {
+  transition:
+    transform 0.08s ease,
+    background-color 0.12s ease;
+  &:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }

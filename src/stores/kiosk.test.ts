@@ -16,6 +16,7 @@ const device: KioskDevice = {
 };
 const product = (id: string, quantity: number): Product => ({
   id,
+  code: null,
   name: id,
   description: null,
   unit: 'unidad',
@@ -95,7 +96,6 @@ describe('kiosk store', () => {
       products: [product('gaseosa', 3)],
     });
     await store.register({
-      personId: 'u',
       pin: '2580',
       type: 'OUT',
       items: [{ productId: 'gaseosa', quantity: 2 }],

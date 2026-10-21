@@ -1,15 +1,23 @@
 import { expect, test, type Page } from '@playwright/test';
-import { activeView, ADMIN, ANA, LUIS, openTab, resetDatabase, tapProduct, typePin } from './fixtures';
+import {
+  activeView,
+  ADMIN,
+  ADMIN_CODE,
+  ANA,
+  cartPanel,
+  keypad,
+  LUIS,
+  machine,
+  resetDatabase,
+  tapProduct,
+  typeAndOk,
+  typePin,
+} from './fixtures';
 
 const SHOTS = process.env.E2E_SCREENSHOTS_DIR;
 const shot = async (page: Page, name: string) => {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` });
 };
-
-const stockText = (page: Page, name: string) =>
-  activeView(page)
-    .getByRole('button', { name: new RegExp(`^${name}:`) })
-    .getAttribute('aria-label');
 
 // Un solo dispositivo durante todo el archivo: la tablet se autoriza una vez y conserva su token.
 test.describe.configure({ mode: 'serial' });
@@ -31,7 +39,7 @@ test('una tablet nueva pide autorización y el admin la autoriza desde ella', as
   await activeView(page).getByRole('button', { name: 'Autorizar esta tablet' }).click();
   await expect(page).toHaveURL(/\/admin\/login/);
   await page.getByLabel('Email').fill(ADMIN.email);
-  await page.getByLabel('Contraseña').fill(ADMIN.password);
+  await page.getByLabel('Contraseña', { exact: true }).fill(ADMIN.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
 
   await expect(page).toHaveURL(/\/admin\/tablets\?autorizar=1/);
@@ -40,9 +48,9 @@ test('una tablet nueva pide autorización y el admin la autoriza desde ella', as
   await dialog.getByRole('button', { name: 'Autorizar' }).click();
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(activeView(page).getByText('Quien más retira')).toBeVisible();
-  await expect(activeView(page).getByText(ANA.name).first()).toBeVisible(); // demo: Ana encabeza
-  await shot(page, 'k02-inicio');
+  await expect(machine(page)).toBeVisible();
+  await expect(activeView(page).getByRole('link', { name: /Quien más retira: Ana Gómez/ })).toBeVisible();
+  await shot(page, 'k02-maquina');
 
   // La sesión de admin se cerró al autorizar.
   await page.goto('/admin');
@@ -50,74 +58,85 @@ test('una tablet nueva pide autorización y el admin la autoriza desde ella', as
   await page.goto('/');
 });
 
-test('Luis saca 2 gaseosas y 1 yogur con su nombre y PIN', async () => {
-  await expect(activeView(page).getByRole('tab', { name: 'Sacar' })).toHaveAttribute('aria-selected', 'true');
+test('Luis toca los productos y retira solo con su PIN', async () => {
+  await expect(keypad(page)).toContainText('Toca los productos que vas a llevar');
   await tapProduct(page, 'Gaseosa 400 ml', 2);
   await tapProduct(page, 'Yogur de fresa');
-  const cart = activeView(page).getByRole('complementary', { name: 'Lo que elegiste' });
-  await expect(cart).toContainText('Gaseosa 400 ml');
-  await shot(page, 'k03-lista');
-  await cart.getByRole('button', { name: /Continuar/ }).click();
+  await expect(cartPanel(page)).toContainText('2×Gaseosa 400 ml');
+  await expect(cartPanel(page)).toContainText('1×Yogur de fresa');
+  await expect(cartPanel(page)).toContainText('falta tu PIN');
+  await expect(keypad(page)).toContainText('TU PIN');
+  await shot(page, 'k03-retiro');
 
-  await expect(activeView(page).getByRole('heading', { name: '¿Quién eres?' })).toBeVisible();
-  await expect(activeView(page).getByRole('button', { name: /Luis/ })).toBeVisible();
-  await shot(page, 'k04-quien-eres');
-  await activeView(page).getByRole('button', { name: /Luis/ }).click();
+  await typeAndOk(page, '9999'); // de nadie
+  await expect(keypad(page)).toContainText('PIN incorrecto · te quedan 4 intentos');
+  await shot(page, 'k04-pin-incorrecto');
+  await typeAndOk(page, LUIS.pin);
 
-  await expect(activeView(page).getByRole('heading', { name: 'Hola, Luis' })).toBeVisible();
-  await typePin(page, '0000');
-  await expect(activeView(page).getByRole('alert')).toContainText('Te quedan 4 intentos');
-  await shot(page, 'k05-pin-incorrecto');
-  await typePin(page, LUIS.pin);
+  await expect(activeView(page).getByText('Producto entregado')).toBeVisible();
+  const done = activeView(page).getByRole('region', { name: 'Confirmación' });
+  await expect(done).toContainText('¡Listo, Luis!');
+  await expect(done).toContainText('Retiraste 2 Gaseosa 400 ml y 1 Yogur de fresa');
+  await shot(page, 'k05-entrega');
+  await done.getByRole('button', { name: 'Volver ahora' }).click();
 
-  const done = activeView(page).getByRole('status').filter({ hasText: '¡Listo, Luis!' });
-  await expect(done).toContainText('Sacaste 2 Gaseosa 400 ml y 1 Yogur de fresa.');
-  await shot(page, 'k06-listo');
-  await done.getByRole('button', { name: 'Terminar' }).click();
-
-  // Demo: Luis tenía 7 retiros de unidades; ahora 10 y pasa a ser quien más retira (Ana: 9).
-  await expect(activeView(page).locator('header')).toContainText(LUIS.name);
-  await expect(activeView(page).locator('header')).toContainText('10 und.');
+  // De vuelta en la máquina, vacía y con el aviso. Demo: Luis tenía 7 y pasa a 10 (Ana: 9).
+  await expect(activeView(page).getByRole('status').filter({ hasText: 'retiró 2 Gaseosa 400 ml' })).toBeVisible();
+  await expect(cartPanel(page)).toContainText('Tu retiro está vacío');
+  await expect(activeView(page).getByRole('link', { name: /Quien más retira: Luis Martínez, 10 unidades/ })).toBeVisible();
+  await shot(page, 'k06-regreso');
 });
 
-test('meter productos y ver ranking y movimientos', async () => {
-  await openTab(page, 'Meter');
-  const before = await stockText(page, 'Manzanas');
-  await tapProduct(page, 'Manzanas', 3);
-  await activeView(page)
-    .getByRole('button', { name: /Continuar/ })
-    .click();
-  await activeView(page).getByRole('button', { name: /Ana/ }).click();
-  await typePin(page, ANA.pin);
-  await expect(activeView(page).getByRole('status').filter({ hasText: '¡Listo, Ana!' })).toContainText(
-    'Metiste 3 Manzanas.',
-  );
-  await activeView(page).getByRole('button', { name: 'Terminar' }).click();
-  expect(await stockText(page, 'Manzanas')).not.toBe(before);
+test('buscar un producto (desde 3 letras) y ver su precio por unidad', async () => {
+  const search = activeView(page).getByRole('searchbox', { name: /Buscar producto/ });
+  await search.fill('yo');
+  await expect(machine(page).getByRole('button', { name: /^Agregar / })).toHaveCount(5); // aún no filtra
+  await search.fill('yog');
+  await expect(machine(page).getByRole('button', { name: /^Agregar / })).toHaveCount(1);
+  await expect(machine(page).getByRole('button', { name: /^Agregar Yogur de fresa, quedan \d+, \$\s?[\d.]+ c\/u/ })).toBeVisible();
+  await search.fill('zzz');
+  await expect(machine(page).getByRole('status')).toContainText('No hay productos que coincidan con «zzz»');
+  await shot(page, 'k03b-busqueda');
+  await activeView(page).getByRole('button', { name: 'Borrar búsqueda' }).click();
+  await expect(machine(page).getByRole('button', { name: /^Agregar / })).toHaveCount(5);
+});
 
-  await openTab(page, 'Ranking');
+test('quitar del retiro', async () => {
+  await tapProduct(page, 'Papas fritas');
+  await cartPanel(page).getByRole('button', { name: 'Quitar Papas fritas del retiro' }).click();
+  await expect(cartPanel(page)).toContainText('Tu retiro está vacío');
+  await expect(keypad(page)).toContainText('Toca los productos que vas a llevar');
+});
+
+test('ranking e historial desde la máquina', async () => {
+  await activeView(page).getByRole('link', { name: /Ver ranking/ }).click();
+  await expect(page).toHaveURL(/\/ranking$/);
   await expect(activeView(page).getByRole('list', { name: 'Unidades retiradas por persona' })).toContainText(
     LUIS.name,
   );
   await shot(page, 'k07-ranking');
-  await openTab(page, 'Historial');
-  await expect(
-    activeView(page)
-      .getByText(/Ana Gómez\s+metió 3 unidades de/)
-      .first(),
-  ).toBeVisible();
-  await shot(page, 'k08-movimientos');
+  await activeView(page).getByRole('button', { name: 'Volver' }).click();
+  await expect(machine(page)).toBeVisible();
+
+  await activeView(page).getByRole('link', { name: 'Historial' }).click();
+  await expect(page).toHaveURL(/\/historial$/);
+  await expect(activeView(page).getByText(`${LUIS.name} ·`).first()).toBeVisible();
+  await activeView(page).getByRole('button', { name: 'Retiros' }).click();
+  await shot(page, 'k08-historial');
+  await activeView(page).getByRole('button', { name: 'Volver' }).click();
+  await expect(machine(page)).toBeVisible();
 });
 
-test('Atrás vuelve al paso anterior y Vaciar limpia la lista', async () => {
-  await openTab(page, 'Sacar');
-  await tapProduct(page, 'Papas fritas');
-  await activeView(page)
-    .getByRole('button', { name: /Continuar/ })
-    .click();
-  await activeView(page).getByRole('button', { name: 'Volver a elegir' }).click();
-  const cart = activeView(page).getByRole('complementary', { name: 'Lo que elegiste' });
-  await expect(cart).toContainText('Papas fritas');
-  await cart.getByRole('button', { name: 'Vaciar' }).click();
-  await expect(cart).toContainText('Toca los productos para agregarlos.');
+test('el administrador entra desde la máquina con su código', async () => {
+  await typePin(page, '1357');
+  await expect(keypad(page)).toContainText('ADMINISTRADOR');
+  await expect(activeView(page).getByRole('link', { name: '¿Sin código? Entrar con correo' })).toBeVisible();
+  await keypad(page).getByRole('button', { name: /^OK/ }).click();
+  await expect(keypad(page)).toContainText('Código incorrecto · te quedan 4 intentos');
+
+  await typeAndOk(page, ADMIN_CODE);
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole('navigation', { name: 'Administración' })).toBeVisible();
+  await shot(page, 'k09-admin');
+  expect(ANA.name).toBeTruthy();
 });

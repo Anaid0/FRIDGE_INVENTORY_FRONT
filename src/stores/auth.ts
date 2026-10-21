@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import type { User } from '@/domain/models';
+import type { LoginResult, User } from '@/domain/models';
 import { useServices, useTokenStorage } from '@/services/container';
 
 export const useAuthStore = defineStore('auth', () => {
-  const { auth } = useServices();
+  const { auth, kiosk } = useServices();
   const tokens = useTokenStorage();
 
   const user = ref<User | null>(null);
@@ -15,13 +15,21 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => Boolean(token.value && user.value));
   const isAdmin = computed(() => user.value?.role === 'ADMIN');
 
-  async function login(email: string, password: string): Promise<User> {
-    const result = await auth.login(email.trim(), password);
+  function start(result: LoginResult): User {
     tokens.set(result.token);
     token.value = result.token;
     user.value = result.user;
     restored.value = true;
     return result.user;
+  }
+
+  async function login(email: string, password: string): Promise<User> {
+    return start(await auth.login(email.trim(), password));
+  }
+
+  /** Entrar desde la máquina con el código de administrador (la tablet debe estar autorizada). */
+  async function loginWithCode(code: string): Promise<User> {
+    return start(await kiosk.adminSession(code));
   }
 
   function logout(): void {
@@ -42,5 +50,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, token, isAuthenticated, isAdmin, login, logout, restoreSession };
+  return { user, token, isAuthenticated, isAdmin, login, loginWithCode, logout, restoreSession };
 });

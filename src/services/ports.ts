@@ -29,6 +29,7 @@ import type {
   KioskMovementResult,
   KioskPerson,
   LoginResult,
+  MovementType,
   MovementView,
   Page,
   PairKioskResult,
@@ -61,6 +62,8 @@ import type {
 export interface AuthService {
   login(email: string, password: string): Promise<LoginResult>;
   me(): Promise<User>;
+  /** Cambia el código con el que el admin entra desde la máquina (pide su contraseña). */
+  setAdminCode(password: string, code: string): Promise<void>;
 }
 
 /** Usuarios con cuenta (administradores) y lista mínima de todos para selectores. */
@@ -78,7 +81,8 @@ export interface PeopleService {
   activity(periodId?: string): Promise<PeopleActivity>;
   create(input: CreatePersonInput): Promise<Person>;
   update(id: string, input: UpdatePersonInput): Promise<Person>;
-  resetPin(id: string, pin: string): Promise<Person>;
+  /** Pide la contraseña del admin que hace el cambio. */
+  resetPin(id: string, pin: string, adminPassword: string): Promise<Person>;
 }
 
 /** Administración de tablets autorizadas. Solo admin. */
@@ -159,8 +163,13 @@ export interface KioskService {
   /** "Calcular el más hambriento" desde la tablet (solo la primera vez; recalcular es del admin). */
   computeRanking(periodId: string): Promise<PeriodRanking>;
   latestMovements(limit?: number): Promise<MovementView[]>;
+  /** Historial paginado de la máquina (GET /movements), con filtro opcional Retiros/Ingresos. */
+  movements(query: { page: number; pageSize: number; type?: MovementType }): Promise<Page<MovementView>>;
   register(input: KioskMovementInput): Promise<KioskMovementResult>;
-  changePin(personId: string, currentPin: string, newPin: string): Promise<void>;
+  /** Un administrador entra desde la máquina con su código; devuelve una sesión como el login. */
+  adminSession(code: string): Promise<LoginResult>;
+  /** Cambia el PIN: el actual identifica a la persona. Devuelve su nombre. */
+  changePin(currentPin: string, newPin: string): Promise<{ name: string }>;
 }
 
 export interface Services {

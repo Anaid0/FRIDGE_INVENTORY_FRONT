@@ -10,7 +10,7 @@ const rows = [
 describe('BarChart', () => {
   it('escala las barras respecto al máximo y resalta solo la enfatizada', () => {
     const wrapper = mount(BarChart, { props: { rows, caption: 'Retiros', emphasizeKey: 'a' } });
-    const bars = wrapper.findAll('li span.h-4');
+    const bars = wrapper.findAll('li [data-bar]');
     expect(bars[0]?.attributes('style')).toContain('width: 100%');
     expect(bars[1]?.attributes('style')).toContain('width: 50%');
     expect(bars[0]?.attributes('style')).toContain('--color-brand-600');

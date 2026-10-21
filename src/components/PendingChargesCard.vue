@@ -40,39 +40,37 @@ async function onPaid() {
 <template>
   <section
     v-if="pending.data.value?.length"
-    class="card overflow-hidden ring-1 ring-accent-200/70"
+    class="card flex flex-col px-3 pt-1 pb-1.5 ring-1 ring-accent-200/70 lg:px-4"
     aria-labelledby="pending-charges-title"
   >
-    <div
-      class="flex flex-wrap items-center justify-between gap-2 border-b border-ink-200/70 bg-accent-50/70 px-[22px] py-4"
-    >
-      <div>
-        <h2 id="pending-charges-title" class="text-[19px] font-black text-ink-900">Por cobrar</h2>
-        <p class="text-[13px] text-ink-600">
+    <div class="flex items-start justify-between gap-2 py-2.5">
+      <div class="min-w-0">
+        <h2 id="pending-charges-title" class="section-title">Por cobrar</h2>
+        <p class="mt-0.5 text-[11px] text-ink-500 lg:text-xs">
           Lo que cada uno consumió en quincenas anteriores. Al pagar, entra como aporte a esta quincena.
         </p>
       </div>
-      <span class="font-black text-accent-700 tabular-nums">{{ formatMoney(total) }}</span>
+      <span class="num shrink-0 text-[15px] text-accent-700">{{ formatMoney(total) }}</span>
     </div>
-    <ul class="divide-y divide-ink-200/60">
+    <ul>
       <li
         v-for="c in pending.data.value"
         :key="c.id ?? c.user.id"
-        class="flex items-center gap-3 px-[22px] py-2.5"
+        class="flex min-h-11 items-center gap-2 border-t border-ink-900/8 py-1.5"
       >
-        <Avatar :person="c.user" size="sm" />
+        <Avatar :person="c.user" size="sm" class="size-[26px]! text-[10px]!" />
         <div class="min-w-0 flex-1">
-          <p class="truncate font-bold text-ink-800">{{ fullName(c.user) }}</p>
-          <p class="text-xs text-ink-500">
+          <p class="truncate text-xs font-bold text-ink-800 lg:text-[13px]">{{ fullName(c.user) }}</p>
+          <p class="truncate text-[10px] text-ink-500 lg:text-[11px]">
             {{ c.period.name }} · consumió {{ formatMoney(c.amount) }}
             <span v-if="toCents(c.paid) > 0"> · pagó {{ formatMoney(c.paid) }}</span>
           </p>
         </div>
-        <span class="shrink-0 font-extrabold text-accent-700 tabular-nums">{{ formatMoney(c.pending) }}</span>
+        <span class="num shrink-0 text-xs text-accent-700 lg:text-[13px]">{{ formatMoney(c.pending) }}</span>
         <button
           v-if="auth.isAdmin"
           type="button"
-          class="btn-secondary min-h-11 shrink-0"
+          class="inline-flex min-h-11 shrink-0 items-center rounded-[10px] border border-ink-300 bg-white/80 px-2.5 text-[11px] font-extrabold text-brand-700 hover:bg-white"
           :aria-label="`Registrar pago de ${fullName(c.user)}`"
           @click="paying = c"
         >
